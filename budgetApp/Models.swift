@@ -9,6 +9,11 @@ struct CategoryItem: Identifiable, Codable, Hashable {
     var limit: Double
 }
 
+struct Tag: Identifiable, Codable, Equatable, Hashable {
+    var id: UUID = UUID()
+    var name: String
+}
+
 struct Purchase: Identifiable, Codable, Equatable {
     let id: UUID
     var date: Date
@@ -17,7 +22,8 @@ struct Purchase: Identifiable, Codable, Equatable {
     var categoryID: UUID?
     var notes: String?
     var ocrText: String?
-    
+    var tagIDs: [UUID]          // NEW: associated tags (does not create budgets)
+
     init(
         id: UUID = UUID(),
         date: Date = Date(),
@@ -25,7 +31,8 @@ struct Purchase: Identifiable, Codable, Equatable {
         amount: Double,
         categoryID: UUID?,
         notes: String? = nil,
-        ocrText: String? = nil
+        ocrText: String? = nil,
+        tagIDs: [UUID] = []
     ) {
         self.id = id
         self.date = date
@@ -34,6 +41,7 @@ struct Purchase: Identifiable, Codable, Equatable {
         self.categoryID = categoryID
         self.notes = notes
         self.ocrText = ocrText
+        self.tagIDs = tagIDs
     }
 }
 

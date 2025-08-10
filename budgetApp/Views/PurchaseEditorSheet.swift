@@ -20,6 +20,8 @@ struct PurchaseEditorSheet: View {
     @State private var selectedCategoryID: UUID?
     @State private var date: Date = Date()
     @State private var notes: String = ""
+    @State private var selectedTagIDs: Set<UUID> = []
+    @State private var showTagPicker = false
     
     private var parsedAmount: Double? {
         Double(amountString.filter { "0123456789.".contains($0) })
@@ -50,6 +52,35 @@ struct PurchaseEditorSheet: View {
                     TextField("Optional", text: $notes, axis: .vertical)
                         .lineLimit(3, reservesSpace: true)
                 }
+                Section(header: Text("Tags")) {
+                    if selectedTagIDs.isEmpty {
+                        Text("No tags").foregroundColor(.secondary)
+                    } else {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 6) {
+                                ForEach(Array(selectedTagIDs), id: \.self) { tid in
+                                    let name = store.tagName(for: tid)
+                                    Text(name)
+                                        .font(.footnote)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(Color.cardBackground)
+                                        .clipShape(Capsule())
+                                        .overlay(Capsule().stroke(.subtleOutline))
+                                }
+                            }
+                        }
+                    }
+                    Button {
+                        showTagPicker = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Add Tags")
+                        }
+                    }
+                }
+
                 
                 if let catID = selectedCategoryID,
                    let cat = store.categories.first(where: { $0.id == catID }),
@@ -97,7 +128,8 @@ struct PurchaseEditorSheet: View {
                             amount: parsedAmount ?? 0,
                             categoryID: selectedCategoryID,
                             notes: notes.isEmpty ? nil : notes,
-                            ocrText: purchase?.ocrText
+                            ocrText: purchase?.ocrText,
+                            tagIDs: Array(selectedTagIDs)
                         )
                         onSave(model)
                         // Remember merchant -> category for future suggestions
@@ -111,6 +143,10 @@ struct PurchaseEditorSheet: View {
                 }
             }
             .scrollContentBackground(.automatic)
+            .sheet(isPresented: $showTagPicker) {
+                TagPickerSheet(selected: $selectedTagIDs)
+                    .environmentObject(store)
+            }
             .onAppear {
                 if let p = purchase {
                     merchant = p.merchant
@@ -118,6 +154,7 @@ struct PurchaseEditorSheet: View {
                     selectedCategoryID = p.categoryID ?? store.categoryID(named: "Other") ?? store.categories.first?.id
                     date = p.date
                     notes = p.notes ?? ""
+                    selectedTagIDs = Set(p.tagIDs)
                 } else {
                     selectedCategoryID = store.categoryID(named: "Other") ?? store.categories.first?.id
                 }

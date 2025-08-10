@@ -1,5 +1,5 @@
 // File: Views/Budget/BudgetView.swift
-// Fix: Use .sheet(item:) for editing purchases so the sheet is populated with the tapped purchase.
+// Shows tags bar under budgets; tap + to create tags. Item-based editing for purchases remains.
 
 import SwiftUI
 import UniformTypeIdentifiers
@@ -9,18 +9,23 @@ struct BudgetView: View {
     @EnvironmentObject var theme: ThemeStore
     
     @State private var showAddPurchase = false
-    @State private var editingMode = false                  // Move mode toggle
+    @State private var editingMode = false
     @State private var editingCategory: CategoryItem?
     @State private var showCategoryEditor = false
     
-    // Purchase editing (use item-based sheet)
+    // Purchase editing (item-based sheet)
     @State private var editingPurchase: Purchase?
+    @State private var purchaseFilter: PurchaseFilter?
 
     // Wiggle driver (subtle, like cards)
     @State private var wiggleOn = false
     // Reorder state
     @State private var draggingCategory: CategoryItem?
 
+    // Tag creation
+    @State private var showNewTagSheet = false
+    @State private var newTagName: String = ""
+    
     private let columns = [GridItem(.flexible()), GridItem(.flexible())]
     private var tileSize: CGSize { .init(width: UIScreen.main.bounds.width/2 - 24, height: 120) }
 
@@ -44,7 +49,6 @@ struct BudgetView: View {
 
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 12) {
-                    // Regular category tiles
                     ForEach(store.categories) { cat in
                         let spentAmt = spent(for: cat)
 
@@ -62,10 +66,11 @@ struct BudgetView: View {
                                 if editingMode {
                                     editingCategory = cat
                                     showCategoryEditor = true
+                                } else {
+                                    purchaseFilter = .category(cat)
                                 }
                             }
                             
-                            // Drag handle appears only in move mode
                             if editingMode {
                                 HandleDragButton()
                                     .padding(6)
@@ -75,7 +80,6 @@ struct BudgetView: View {
                                     }
                             }
                         }
-                        // OnDrop to reorder (keeps scrolling intact)
                         .onDrop(of: [UTType.text],
                                 delegate: BudgetReorderDropDelegate(
                                     current: $draggingCategory,
@@ -92,12 +96,10 @@ struct BudgetView: View {
                         )
                     }
                     
-                    // Combined control tile (always last)
                     CombinedCategoryControlTile(
                         width: tileSize.width,
                         height: tileSize.height,
                         onNew: {
-                            // Open editor to create new
                             if !editingMode { editingMode = true }
                             wiggleOn = true
                             editingCategory = nil
@@ -112,6 +114,21 @@ struct BudgetView: View {
                     )
                 }
                 .padding(.horizontal)
+
+                // TAGS BAR (under budgets)
+                TagsBar(
+                    tags: store.tags,
+                    onTagTapped: { tag in
+                        purchaseFilter = .tag(tag)
+                    },
+                    onAddTapped: {
+                        newTagName = ""
+                        showNewTagSheet = true
+                    }
+                )
+                .padding(.horizontal)
+                .padding(.top, 6)
+
 
                 // Purchases list + tap to edit
                 VStack(alignment: .leading, spacing: 8) {
@@ -141,7 +158,18 @@ struct BudgetView: View {
                             )
                             .contentShape(Rectangle())
                             .onTapGesture {
-                                editingPurchase = p   // triggers sheet(item:)
+                                editingPurchase = p
+                            }
+                            // Show tags for each purchase (small inline chips)
+                            if !p.tagIDs.isEmpty {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 6) {
+                                        ForEach(p.tagIDs, id: \.self) { tid in
+                                            TagChip(text: store.tagName(for: tid))
+                                        }
+                                    }
+                                }
+                                .padding(.bottom, 4)
                             }
                             Divider()
                         }
@@ -167,6 +195,9 @@ struct BudgetView: View {
                 }
             }
         }
+        .navigationDestination(item: $purchaseFilter) { filter in
+            PurchaseListView(filter: filter).environmentObject(store)
+        }
         .sheet(isPresented: $showAddPurchase) {
             AddPurchaseSheet().environmentObject(store)
         }
@@ -181,7 +212,6 @@ struct BudgetView: View {
                 }
             }
         }
-        // IMPORTANT: use item-based sheet so the tapped purchase is injected properly
         .sheet(item: $editingPurchase) { p in
             PurchaseEditorSheet(purchase: p) { updated in
                 if let idx = store.purchases.firstIndex(where: { $0.id == updated.id }) {
@@ -193,10 +223,81 @@ struct BudgetView: View {
             }
             .environmentObject(store)
         }
+        .sheet(isPresented: $showNewTagSheet) {
+            NavigationStack {
+                Form {
+                    TextField("Tag name (e.g. Vegas Trip)", text: $newTagName)
+                        .textInputAutocapitalization(.words)
+                }
+                .navigationTitle("New Tag")
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) { Button("Cancel") { showNewTagSheet = false } }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Add") {
+                            if !newTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                _ = store.addTag(name: newTagName)
+                            }
+                            showNewTagSheet = false
+                        }
+                        .disabled(newTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }
+            }
+        }
     }
 }
 
-// MARK: - Controls
+// MARK: - Tags UI
+
+private struct TagsBar: View {
+    var tags: [Tag]
+    var onTagTapped: (Tag) -> Void
+    var onAddTapped: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Tags").font(.headline)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    Button(action: onAddTapped) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "plus")
+                            Text("Add Tag")
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.purple.opacity(0.12))
+                        .clipShape(Capsule())
+                        .overlay(Capsule().stroke(Color.purple.opacity(0.25)))
+                    }
+                    .buttonStyle(.plain)
+                    
+                    ForEach(tags) { tag in
+                        Button { onTagTapped(tag) } label: {
+                            TagChip(text: tag.name)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct TagChip: View {
+    var text: String
+    var body: some View {
+        Text(text)
+            .font(.footnote)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.cardBackground)
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(.subtleOutline))
+    }
+}
+
+// MARK: - Controls and DropDelegate (unchanged)
 
 private struct HandleDragButton: View {
     var body: some View {
@@ -252,8 +353,6 @@ private struct CombinedCategoryControlTile: View {
         .frame(width: width, height: height)
     }
 }
-
-// MARK: - DropDelegate (stable reorder)
 
 private struct BudgetReorderDropDelegate: DropDelegate {
     @Binding var current: CategoryItem?

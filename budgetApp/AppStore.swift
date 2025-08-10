@@ -10,12 +10,14 @@ final class AppStore: ObservableObject {
     @AppStorage("cards_json") private var cardsJSON: String = ""
     @AppStorage("categories_json") private var categoriesJSON: String = ""
     @AppStorage("category_memory_json") private var categoryMemoryJSON: String = "{}" // merchant -> categoryName
+    @AppStorage("tags_json") private var tagsJSON: String = "[]"                      // NEW: tags store
     
     @Published var purchases: [Purchase] = []
     @Published var budget: BudgetEnvelope = .default
     @Published var cards: [CreditCard] = AppStore.defaultCards
     @Published var categories: [CategoryItem] = AppStore.defaultCategories
     @Published var categoryMemory: [String: String] = [:] // merchant -> categoryName
+    @Published var tags: [Tag] = []                      // NEW: global tags list
     
     static let defaultCategories: [CategoryItem] = [
         CategoryItem(name: "Groceries", limit: 400),
@@ -58,6 +60,7 @@ final class AppStore: ObservableObject {
         if let c = decode([CreditCard].self, from: cardsJSON), !c.isEmpty { cards = c }
         if let cats = decode([CategoryItem].self, from: categoriesJSON), !cats.isEmpty { categories = cats }
         categoryMemory = decode([String: String].self, from: categoryMemoryJSON) ?? [:]
+        tags = decode([Tag].self, from: tagsJSON) ?? [] // NEW
     }
     func persist() {
         purchasesJSON = encode(purchases) ?? "[]"
@@ -65,6 +68,7 @@ final class AppStore: ObservableObject {
         cardsJSON = encode(cards) ?? ""
         categoriesJSON = encode(categories) ?? ""
         categoryMemoryJSON = encode(categoryMemory) ?? "{}"
+        tagsJSON = encode(tags) ?? "[]" // NEW
     }
     
     // Purchases
@@ -84,6 +88,31 @@ final class AppStore: ObservableObject {
     }
     func moveCategory(from offsets: IndexSet, to offset: Int) {
         categories.move(fromOffsets: offsets, toOffset: offset)
+        persist()
+    }
+    
+    // Tags
+    func addTag(name: String) -> Tag {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let existing = tags.first(where: { $0.name.caseInsensitiveCompare(trimmed) == .orderedSame }) {
+            return existing
+        }
+        let tag = Tag(name: trimmed.isEmpty ? "Tag" : trimmed)
+        tags.append(tag)
+        persist()
+        return tag
+    }
+    func deleteTag(_ tag: Tag) {
+        tags.removeAll { $0.id == tag.id }
+        // Also remove the tag from any purchases that reference it
+        for i in purchases.indices {
+            purchases[i].tagIDs.removeAll { $0 == tag.id }
+        }
+        persist()
+    }
+    func renameTag(_ tag: Tag, newName: String) {
+        guard let idx = tags.firstIndex(where: { $0.id == tag.id }) else { return }
+        tags[idx].name = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         persist()
     }
     
@@ -114,5 +143,12 @@ final class AppStore: ObservableObject {
     }
     func categoryID(named name: String) -> UUID? {
         categories.first(where: { $0.name.lowercased() == name.lowercased() })?.id
+    }
+    
+    func tagName(for id: UUID) -> String {
+        tags.first(where: { $0.id == id })?.name ?? "Tag"
+    }
+    func tagID(named name: String) -> UUID? {
+        tags.first(where: { $0.name.lowercased() == name.lowercased() })?.id
     }
 }

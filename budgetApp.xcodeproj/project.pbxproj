@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B15974442E490FD500E7D322 /* DebugConsole.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15974432E490FD500E7D322 /* DebugConsole.swift */; };
 		B1CEDE0A2E47C71B003A0BBC /* budgetAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE092E47C71B003A0BBC /* budgetAppTests.swift */; };
 		B1CEDE142E47C71B003A0BBC /* budgetAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE132E47C71B003A0BBC /* budgetAppUITests.swift */; };
 		B1CEDE162E47C71B003A0BBC /* budgetAppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE152E47C71B003A0BBC /* budgetAppUITestsLaunchTests.swift */; };
@@ -22,11 +23,13 @@
 		B1CEDE552E483C78003A0BBC /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE542E483C78003A0BBC /* AppAppearance.swift */; };
 		B1CEDE572E483C8B003A0BBC /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE562E483C8B003A0BBC /* Models.swift */; };
 		B1CEDE592E483CC4003A0BBC /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE582E483CC4003A0BBC /* AppStore.swift */; };
-		B1CEDE5B2E483CD1003A0BBC /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE5A2E483CD1003A0BBC /* OCRService.swift */; };
+		B1CEDE5B2E483CD1003A0BBC /* ChatGPTService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE5A2E483CD1003A0BBC /* ChatGPTService.swift */; };
 		B1CEDE5D2E483CED003A0BBC /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE5C2E483CED003A0BBC /* SettingsSheet.swift */; };
 		B1CEDE612E483E87003A0BBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1CEDE602E483E87003A0BBC /* Assets.xcassets */; };
 		B1CEDE632E483F6B003A0BBC /* BudgetAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE622E483F6B003A0BBC /* BudgetAppApp.swift */; };
 		B1CEDE662E4840C4003A0BBC /* TileCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE652E4840C4003A0BBC /* TileCard.swift */; };
+                951EC15A502843B0BC16125A /* TagPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25588815A3374A8AA138CBFB /* TagPickerSheet.swift */; };
+                37AF2F3569E04D5FA53E13A4 /* PurchaseListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F3A64B4D144A4C8C2FCE52 /* PurchaseListView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +50,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B15974432E490FD500E7D322 /* DebugConsole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DebugConsole.swift; path = BudgetApp/Debug/DebugConsole.swift; sourceTree = SOURCE_ROOT; };
 		B1CEDDF52E47C71A003A0BBC /* budgetApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = budgetApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1CEDE052E47C71B003A0BBC /* budgetAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = budgetAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1CEDE092E47C71B003A0BBC /* budgetAppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = budgetAppTests.swift; sourceTree = "<group>"; };
@@ -65,11 +69,13 @@
 		B1CEDE542E483C78003A0BBC /* AppAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppAppearance.swift; path = BudgetApp/AppAppearance.swift; sourceTree = SOURCE_ROOT; };
 		B1CEDE562E483C8B003A0BBC /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Models.swift; path = BudgetApp/Models.swift; sourceTree = SOURCE_ROOT; };
 		B1CEDE582E483CC4003A0BBC /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppStore.swift; path = BudgetApp/AppStore.swift; sourceTree = SOURCE_ROOT; };
-		B1CEDE5A2E483CD1003A0BBC /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OCRService.swift; path = BudgetApp/OCRService.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE5A2E483CD1003A0BBC /* ChatGPTService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatGPTService.swift; path = BudgetApp/ChatGPTService.swift; sourceTree = SOURCE_ROOT; };
 		B1CEDE5C2E483CED003A0BBC /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsSheet.swift; path = BudgetApp/Views/SettingsSheet.swift; sourceTree = SOURCE_ROOT; };
 		B1CEDE602E483E87003A0BBC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B1CEDE622E483F6B003A0BBC /* BudgetAppApp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BudgetAppApp.swift; sourceTree = "<group>"; };
 		B1CEDE652E4840C4003A0BBC /* TileCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TileCard.swift; path = BudgetApp/Views/Shared/TileCard.swift; sourceTree = SOURCE_ROOT; };
+                25588815A3374A8AA138CBFB /* TagPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TagPickerSheet.swift; path = budgetApp/Views/TagPickerSheet.swift; sourceTree = SOURCE_ROOT; };
+                78F3A64B4D144A4C8C2FCE52 /* PurchaseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PurchaseListView.swift; path = budgetApp/Views/Budget/PurchaseListView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +103,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B15974422E490FC100E7D322 /* Debug */ = {
+			isa = PBXGroup;
+			children = (
+				B15974432E490FD500E7D322 /* DebugConsole.swift */,
+			);
+			path = Debug;
+			sourceTree = "<group>";
+		};
 		B1CEDDEC2E47C71A003A0BBC = {
 			isa = PBXGroup;
 			children = (
@@ -120,6 +134,7 @@
 		B1CEDDF72E47C71A003A0BBC /* budgetApp */ = {
 			isa = PBXGroup;
 			children = (
+				B15974422E490FC100E7D322 /* Debug */,
 				B1CEDE622E483F6B003A0BBC /* BudgetAppApp.swift */,
 				B1CEDE5F2E483DFF003A0BBC /* Preview Content */,
 				B1CEDE2D2E47CEE3003A0BBC /* Views */,
@@ -127,7 +142,7 @@
 				B1CEDE542E483C78003A0BBC /* AppAppearance.swift */,
 				B1CEDE562E483C8B003A0BBC /* Models.swift */,
 				B1CEDE582E483CC4003A0BBC /* AppStore.swift */,
-				B1CEDE5A2E483CD1003A0BBC /* OCRService.swift */,
+				B1CEDE5A2E483CD1003A0BBC /* ChatGPTService.swift */,
 				B1CEDE602E483E87003A0BBC /* Assets.xcassets */,
 			);
 			path = budgetApp;
@@ -169,6 +184,7 @@
 				B1CEDE472E483BEF003A0BBC /* AddPurchaseSheet.swift */,
 				B1CEDE492E483BF3003A0BBC /* CameraPicker.swift */,
 				B1CEDE5C2E483CED003A0BBC /* SettingsSheet.swift */,
+                                25588815A3374A8AA138CBFB /* TagPickerSheet.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -193,6 +209,7 @@
 			children = (
 				B1CEDE412E483BD7003A0BBC /* BudgetView.swift */,
 				B1CEDE452E483BE7003A0BBC /* BudgetSubviews.swift */,
+                                78F3A64B4D144A4C8C2FCE52 /* PurchaseListView.swift */,
 			);
 			path = Budget;
 			sourceTree = "<group>";
@@ -335,6 +352,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B15974442E490FD500E7D322 /* DebugConsole.swift in Sources */,
 				B1CEDE4E2E483C00003A0BBC /* CardEditorSheet.swift in Sources */,
 				B1CEDE662E4840C4003A0BBC /* TileCard.swift in Sources */,
 				B1CEDE572E483C8B003A0BBC /* Models.swift in Sources */,
@@ -346,11 +364,15 @@
 				B1CEDE512E483C26003A0BBC /* Recommenders.swift in Sources */,
 				B1CEDE5D2E483CED003A0BBC /* SettingsSheet.swift in Sources */,
 				B1CEDE462E483BE7003A0BBC /* BudgetSubviews.swift in Sources */,
-				B1CEDE5B2E483CD1003A0BBC /* OCRService.swift in Sources */,
+				B1CEDE5B2E483CD1003A0BBC /* ChatGPTService.swift in Sources */,
 				B1CEDE4A2E483BF3003A0BBC /* CameraPicker.swift in Sources */,
 				B1CEDE402E483BC7003A0BBC /* RootView.swift in Sources */,
 				B1CEDE482E483BEF003A0BBC /* AddPurchaseSheet.swift in Sources */,
 				B1CEDE442E483BDF003A0BBC /* PurchaseEditorSheet.swift in Sources */,
+
+                                951EC15A502843B0BC16125A /* TagPickerSheet.swift in Sources */,
+                                37AF2F3569E04D5FA53E13A4 /* PurchaseListView.swift in Sources */,
+
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
