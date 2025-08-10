@@ -12,8 +12,7 @@ struct AddPurchaseSheet: View {
     
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var selectedImage: UIImage?
-    @State private var ocrText: String = ""
-    @State private var isOCRRunning = false
+    @State private var isAnalyzing = false
     @State private var showCamera = false
     
     // Manual fields
@@ -49,7 +48,7 @@ struct AddPurchaseSheet: View {
                             Image(systemName: "photo.on.rectangle")
                             Text("Choose Image")
                             Spacer()
-                            if isOCRRunning { ProgressView() }
+                            if isAnalyzing { ProgressView() }
                         }
                         .padding()
                         .background(Color.cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -61,18 +60,12 @@ struct AddPurchaseSheet: View {
                             .scaledToFit()
                             .frame(maxHeight: 200)
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        if !ocrText.isEmpty {
-                            DisclosureGroup("Extracted Text (OCR)") {
-                                Text(ocrText).font(.footnote).foregroundColor(.secondary)
-                            }
-                        }
                     }
                     
                     Group {
                         Text("Manual").font(.headline)
                         TextField("Merchant", text: $merchant)
                             .textFieldStyle(.roundedBorder)
-                            .onChange(of: merchant) { _, _ in updateSuggestedCategoryFromCurrent() }
                         TextField("Amount (e.g. 23.45)", text: $amountString)
                             .keyboardType(.decimalPad)
                             .textFieldStyle(.roundedBorder)
@@ -123,7 +116,7 @@ struct AddPurchaseSheet: View {
                             amount: amt,
                             categoryID: selectedCategoryID,
                             notes: notes.isEmpty ? nil : notes,
-                            ocrText: ocrText.isEmpty ? nil : ocrText
+                            ocrText: nil
                         )
                         store.addPurchase(p)
                         if !merchant.isEmpty, let catName = store.categories.first(where: { $0.id == selectedCategoryID })?.name {
@@ -140,66 +133,35 @@ struct AddPurchaseSheet: View {
             .task(id: selectedPhoto) { await handleSelectedPhoto() }
             .onChange(of: selectedImage) { _, newImg in
                 guard let img = newImg else { return }
-                Task { await runOCR(on: img) }
+                Task { await runAnalysis(on: img) }
             }
             .onAppear {
                 selectedCategoryID = selectedCategoryID ?? store.categoryID(named: "Other") ?? store.categories.first?.id
             }
         }
     }
-    
-    private func updateSuggestedCategoryFromCurrent() {
-        let suggestedName = CategoryRecommender.suggestCategoryName(
-            merchant: merchant, ocrText: ocrText,
-            memory: store.categoryMemory,
-            available: store.categories
-        )
-        if let id = store.categoryID(named: suggestedName) {
-            selectedCategoryID = id
-        }
-    }
-    
     private func handleSelectedPhoto() async {
         guard let item = selectedPhoto else { return }
-        isOCRRunning = true
-        defer { isOCRRunning = false }
+        isAnalyzing = true
+        defer { isAnalyzing = false }
         do {
             if let data = try await item.loadTransferable(type: Data.self),
                let img = UIImage(data: data) {
                 selectedImage = img
-                await runOCR(on: img)
+                await runAnalysis(on: img)
             }
         } catch { }
     }
-    private func runOCR(on image: UIImage) async {
+
+    private func runAnalysis(on image: UIImage) async {
         do {
-            let text = try await OCRService.shared.recognizeText(from: image)
-            ocrText = text
-            if merchant.isEmpty, let guessM = guessMerchant(from: text) { merchant = guessM }
-            if (parsedAmount ?? 0) == 0, let amt = guessAmount(from: text) { amountString = String(format: "%.2f", amt) }
-            updateSuggestedCategoryFromCurrent()
+            let result = try await ChatGPTService.shared.analyze(image: image)
+            if let merch = result.merchant, merchant.isEmpty { merchant = merch }
+            if let amt = result.total { amountString = String(format: "%.2f", amt) }
+            if let catName = result.category,
+               let id = store.categoryID(named: catName) {
+                selectedCategoryID = id
+            }
         } catch { }
-    }
-    
-    private func guessMerchant(from text: String) -> String? {
-        for raw in text.split(separator: "\n").map(String.init) {
-            let lower = raw.lowercased()
-            if lower.range(of: #"[0-9]{1,2}/[0-9]{1,2}"#, options: .regularExpression) != nil { continue }
-            if lower.range(of: #"\$?\s*[0-9]+(?:\.[0-9]{1,2})?"#, options: .regularExpression) != nil { continue }
-            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.count >= 3 { return trimmed }
-        }
-        return nil
-    }
-    private func guessAmount(from text: String) -> Double? {
-        let lower = text.lowercased()
-        let regex = try? NSRegularExpression(pattern: #"\$?\s*([0-9]+(?:\.[0-9]{1,2})?)"#)
-        let matches = regex?.matches(in: lower, range: NSRange(lower.startIndex..., in: lower)) ?? []
-        if matches.isEmpty { return nil }
-        if let _ = lower.range(of: "total"),
-           let m = matches.last,
-           let r = Range(m.range(at: 1), in: lower) { return Double(lower[r]) }
-        if let m = matches.last, let r = Range(m.range(at: 1), in: lower) { return Double(lower[r]) }
-        return nil
     }
 }
