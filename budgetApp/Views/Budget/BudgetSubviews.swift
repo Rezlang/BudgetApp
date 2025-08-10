@@ -1,5 +1,5 @@
 // File: Views/Budget/BudgetSubviews.swift
-// Budget subviews: progress card, add category button, category editor, purchase row
+// Tiles & editors. "+" tile is full height. Added MoveCategoriesTile.
 
 import SwiftUI
 
@@ -9,55 +9,83 @@ struct BudgetProgressCard: View {
     var limit: Double
     var editing: Bool
     var cornerRadius: CGFloat
+    var tileSize: CGSize = .init(width: UIScreen.main.bounds.width/2 - 24, height: 120)
+    /// Forward wiggle state from parent.
+    var wiggle: Bool = false
     
     var ratio: Double { limit > 0 ? min(spent / limit, 1.0) : 0 }
     var over: Bool { limit > 0 && spent > limit }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text(title).font(.headline)
-                if over {
-                    Spacer()
-                    Text("Over").font(.caption).padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Color.purple.opacity(0.18), in: Capsule())
+        TileCard(size: tileSize,
+                 cornerRadius: cornerRadius,
+                 editing: editing,
+                 wiggle: wiggle,
+                 background: editing ? .purpleWash : .cardBackground) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Text(title).font(.headline)
+                    if over {
+                        Spacer()
+                        Text("Over")
+                            .font(.caption)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.purple.opacity(0.18), in: Capsule())
+                    }
                 }
+                ProgressView(value: ratio).progressViewStyle(.linear)
+                HStack {
+                    Text(String(format: "$%.2f spent", spent))
+                    Spacer()
+                    Text(limit > 0 ? String(format: "Limit $%.0f", limit) : "No limit")
+                }
+                .font(.subheadline).foregroundColor(.secondary)
             }
-            ProgressView(value: ratio)
-                .progressViewStyle(.linear)
-            HStack {
-                Text(String(format: "$%.2f spent", spent))
-                Spacer()
-                Text(limit > 0 ? String(format: "Limit $%.0f", limit) : "No limit")
-            }
-            .font(.subheadline).foregroundColor(.secondary)
         }
-        .padding()
-        .background( (editing ? .purpleWash : .cardBackground), in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .strokeBorder(.subtleOutline, lineWidth: editing ? 1.5 : 1)
-        )
     }
 }
 
 struct AddCategoryCard: View {
     var action: ()->Void
+    /// Full height (normal tile)
+    var tileSize: CGSize = .init(width: UIScreen.main.bounds.width/2 - 24, height: 120)
+    
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 10) {
-                Image(systemName: "plus.circle.fill").font(.largeTitle)
-                Text("New Category").font(.subheadline)
+            TileCard(size: tileSize, background: .purpleWash) {
+                HStack(spacing: 10) {
+                    Image(systemName: "plus.circle.fill").font(.title2)
+                    Text("New Category").font(.subheadline).bold()
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, minHeight: 110)
-            .padding()
-            .background(.purpleWash, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(.subtleOutline)
-            )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("AddCategoryTile")
+    }
+}
+
+struct MoveCategoriesTile: View {
+    var action: ()->Void
+    var tileSize: CGSize = .init(width: UIScreen.main.bounds.width/2 - 24, height: 120)
+    var body: some View {
+        Button(action: action) {
+            TileCard(size: tileSize, background: .cardBackground) {
+                HStack(spacing: 10) {
+                    Image(systemName: "arrow.up.arrow.down.square").font(.title2)
+                    Text("Move Categories")
+                        .font(.subheadline).bold()
+                    Spacer()
+                    Image(systemName: "line.3.horizontal")
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("MoveCategoriesTile")
     }
 }
 
@@ -85,7 +113,9 @@ struct CategoryEditorSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") {
                         let lim = Double(limitString) ?? 0
-                        let model = CategoryItem(id: item?.id ?? UUID(), name: name.isEmpty ? "Category" : name, limit: lim)
+                        let model = CategoryItem(id: item?.id ?? UUID(),
+                                                 name: name.isEmpty ? "Category" : name,
+                                                 limit: lim)
                         onSave(model)
                         dismiss()
                     }
