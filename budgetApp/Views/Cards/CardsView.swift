@@ -1,5 +1,5 @@
 // File: Views/Cards/CardsView.swift
-// Mirrors the budget behavior: control tiles ("New Card", "Move Cards") are last, and dragging is via handle button when in move mode.
+// Tap card to edit (when not moving). Combined "New + Move" control tile in one grid slot. Subtle wiggle in move mode.
 
 import SwiftUI
 import PhotosUI
@@ -17,7 +17,7 @@ struct CardsView: View {
     @State private var isOCRRunning = false
     @State private var selectedCategoryID: UUID?
     
-    // Edit / jiggle for card tiles
+    // Move / wiggle state
     @State private var cardsEditingMode = false
     @State private var cardsWiggleOn = false
     @State private var editingCard: CreditCard?
@@ -41,13 +41,12 @@ struct CardsView: View {
                         ZStack(alignment: .topTrailing) {
                             TileCard(size: tileSize,
                                      editing: cardsEditingMode,
-                                     wiggle: cardsWiggleOn,
+                                     wiggle: cardsEditingMode && cardsWiggleOn,
                                      background: .cardBackground) {
                                 CardTileContent(card: card)
                             }
-                            .opacity(draggingCard?.id == card.id ? 0.35 : 1)
                             .onTapGesture {
-                                if cardsEditingMode {
+                                if !cardsEditingMode {
                                     editingCard = card
                                     showCardEditor = true
                                 }
@@ -77,19 +76,25 @@ struct CardsView: View {
                         )
                     }
                     
-                    // Control tiles: always last
-                    NewCardTile {
-                        editingCard = nil
-                        showCardEditor = true
-                    }
-                    MoveCardsTile {
-                        cardsEditingMode.toggle()
-                        cardsWiggleOn = cardsEditingMode
-                        draggingCard = nil
-                    }
+                    // Combined control tile (always last)
+                    CombinedCardControlTile(
+                        width: tileSize.width,
+                        height: tileSize.height,
+                        onNew: {
+                            editingCard = nil
+                            showCardEditor = true
+                        },
+                        onMoveToggle: {
+                            cardsEditingMode.toggle()
+                            cardsWiggleOn = cardsEditingMode
+                            draggingCard = nil
+                        },
+                        isMoveOn: cardsEditingMode
+                    )
                 }
                 .padding(.horizontal)
                 
+                // Planner / OCR / Details / Recommendation
                 PurchasePlannerSection(
                     naturalText: $naturalText,
                     amountString: $amountString,
@@ -245,42 +250,44 @@ private struct CardTileContent: View {
     }
 }
 
-private struct NewCardTile: View {
-    var action: ()->Void
-    private var tileSize: CGSize { .init(width: UIScreen.main.bounds.width/2 - 24, height: 120) }
+private struct CombinedCardControlTile: View {
+    let width: CGFloat
+    let height: CGFloat
+    var onNew: () -> Void
+    var onMoveToggle: () -> Void
+    var isMoveOn: Bool
+    
     var body: some View {
-        Button(action: action) {
-            TileCard(size: tileSize, background: .purpleWash) {
+        VStack(spacing: 8) {
+            Button(action: onNew) {
                 HStack(spacing: 10) {
                     Image(systemName: "plus.circle.fill").font(.title2)
                     Text("New Card").font(.subheadline).bold()
                     Spacer()
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .padding(14)
+                .frame(width: width, height: height/2)
+                .background(Color.purpleWash, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.subtleOutline))
             }
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("AddCardTile")
-    }
-}
-
-private struct MoveCardsTile: View {
-    var action: ()->Void
-    private var tileSize: CGSize { .init(width: UIScreen.main.bounds.width/2 - 24, height: 120) }
-    var body: some View {
-        Button(action: action) {
-            TileCard(size: tileSize, background: .cardBackground) {
+            .buttonStyle(.plain)
+            
+            Button(action: onMoveToggle) {
                 HStack(spacing: 10) {
                     Image(systemName: "arrow.up.arrow.down.square").font(.title2)
-                    Text("Move Cards").font(.subheadline).bold()
+                    Text(isMoveOn ? "Done Moving" : "Move Cards")
+                        .font(.subheadline).bold()
                     Spacer()
                     Image(systemName: "line.3.horizontal").foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .padding(14)
+                .frame(width: width, height: height/2)
+                .background(Color.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.subtleOutline))
             }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("MoveCardsTile")
+        .frame(width: width, height: height)
     }
 }
 
