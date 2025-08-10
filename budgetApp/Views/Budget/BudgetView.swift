@@ -1,6 +1,5 @@
 // File: Views/Budget/BudgetView.swift
-// Reorder only when "Move Categories" tile is tapped; handle buttons appear on tiles.
-// The two control tiles ("New Category" and "Move Categories") are always last.
+// Fix: Use .sheet(item:) for editing purchases so the sheet is populated with the tapped purchase.
 
 import SwiftUI
 import UniformTypeIdentifiers
@@ -8,25 +7,25 @@ import UniformTypeIdentifiers
 struct BudgetView: View {
     @EnvironmentObject var store: AppStore
     @EnvironmentObject var theme: ThemeStore
+    
     @State private var showAddPurchase = false
-    @State private var editingMode = false
+    @State private var editingMode = false                  // Move mode toggle
     @State private var editingCategory: CategoryItem?
     @State private var showCategoryEditor = false
     
-    // Purchase editing
+    // Purchase editing (use item-based sheet)
     @State private var editingPurchase: Purchase?
-    @State private var showPurchaseEditor = false
 
-    // Wiggle driver
+    // Wiggle driver (subtle, like cards)
     @State private var wiggleOn = false
     // Reorder state
     @State private var draggingCategory: CategoryItem?
 
-    let columns = [GridItem(.flexible()), GridItem(.flexible())]
+    private let columns = [GridItem(.flexible()), GridItem(.flexible())]
     private var tileSize: CGSize { .init(width: UIScreen.main.bounds.width/2 - 24, height: 120) }
 
-    var totalSpent: Double { store.purchases.reduce(0) { $0 + $1.amount } }
-    func spent(for cat: CategoryItem) -> Double {
+    private var totalSpent: Double { store.purchases.reduce(0) { $0 + $1.amount } }
+    private func spent(for cat: CategoryItem) -> Double {
         store.purchases.filter { $0.categoryID == cat.id }.reduce(0) { $0 + $1.amount }
     }
 
@@ -57,9 +56,8 @@ struct BudgetView: View {
                                 editing: editingMode,
                                 cornerRadius: theme.cornerRadius,
                                 tileSize: tileSize,
-                                wiggle: wiggleOn
+                                wiggle: editingMode && wiggleOn
                             )
-                            .opacity(draggingCategory?.id == cat.id ? 0.35 : 1)
                             .onTapGesture {
                                 if editingMode {
                                     editingCategory = cat
@@ -67,7 +65,7 @@ struct BudgetView: View {
                                 }
                             }
                             
-                            // Drag handle appears only in edit mode
+                            // Drag handle appears only in move mode
                             if editingMode {
                                 HandleDragButton()
                                     .padding(6)
@@ -94,18 +92,24 @@ struct BudgetView: View {
                         )
                     }
                     
-                    // Control tiles: always last
-                    AddCategoryCard {
-                        editingMode = true
-                        wiggleOn = true
-                        editingCategory = nil
-                        showCategoryEditor = true
-                    }
-                    MoveCategoriesTile {
-                        editingMode.toggle()
-                        wiggleOn = editingMode
-                        draggingCategory = nil
-                    }
+                    // Combined control tile (always last)
+                    CombinedCategoryControlTile(
+                        width: tileSize.width,
+                        height: tileSize.height,
+                        onNew: {
+                            // Open editor to create new
+                            if !editingMode { editingMode = true }
+                            wiggleOn = true
+                            editingCategory = nil
+                            showCategoryEditor = true
+                        },
+                        onMoveToggle: {
+                            editingMode.toggle()
+                            wiggleOn = editingMode
+                            draggingCategory = nil
+                        },
+                        isMoveOn: editingMode
+                    )
                 }
                 .padding(.horizontal)
 
@@ -137,8 +141,7 @@ struct BudgetView: View {
                             )
                             .contentShape(Rectangle())
                             .onTapGesture {
-                                editingPurchase = p
-                                showPurchaseEditor = true
+                                editingPurchase = p   // triggers sheet(item:)
                             }
                             Divider()
                         }
@@ -178,23 +181,22 @@ struct BudgetView: View {
                 }
             }
         }
-        .sheet(isPresented: $showPurchaseEditor) {
-            if let p = editingPurchase {
-                PurchaseEditorSheet(purchase: p) { updated in
-                    if let idx = store.purchases.firstIndex(where: { $0.id == updated.id }) {
-                        store.purchases[idx] = updated
-                        store.persist()
-                    }
-                } onDelete: {
-                    if let p = editingPurchase {
-                        store.deletePurchase(p)
-                    }
+        // IMPORTANT: use item-based sheet so the tapped purchase is injected properly
+        .sheet(item: $editingPurchase) { p in
+            PurchaseEditorSheet(purchase: p) { updated in
+                if let idx = store.purchases.firstIndex(where: { $0.id == updated.id }) {
+                    store.purchases[idx] = updated
+                    store.persist()
                 }
-                .environmentObject(store)
+            } onDelete: {
+                store.deletePurchase(p)
             }
+            .environmentObject(store)
         }
     }
 }
+
+// MARK: - Controls
 
 private struct HandleDragButton: View {
     var body: some View {
@@ -210,7 +212,49 @@ private struct HandleDragButton: View {
     }
 }
 
-// DropDelegate
+private struct CombinedCategoryControlTile: View {
+    let width: CGFloat
+    let height: CGFloat
+    var onNew: () -> Void
+    var onMoveToggle: () -> Void
+    var isMoveOn: Bool
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Button(action: onNew) {
+                HStack(spacing: 10) {
+                    Image(systemName: "plus.circle.fill").font(.title2)
+                    Text("New Category").font(.subheadline).bold()
+                    Spacer()
+                }
+                .padding(14)
+                .frame(width: width, height: height/2)
+                .background(Color.purpleWash, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.subtleOutline))
+            }
+            .buttonStyle(.plain)
+            
+            Button(action: onMoveToggle) {
+                HStack(spacing: 10) {
+                    Image(systemName: "arrow.up.arrow.down.square").font(.title2)
+                    Text(isMoveOn ? "Done Moving" : "Move Categories")
+                        .font(.subheadline).bold()
+                    Spacer()
+                    Image(systemName: "line.3.horizontal").foregroundStyle(.secondary)
+                }
+                .padding(14)
+                .frame(width: width, height: height/2)
+                .background(Color.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.subtleOutline))
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(width: width, height: height)
+    }
+}
+
+// MARK: - DropDelegate (stable reorder)
+
 private struct BudgetReorderDropDelegate: DropDelegate {
     @Binding var current: CategoryItem?
     let item: CategoryItem
