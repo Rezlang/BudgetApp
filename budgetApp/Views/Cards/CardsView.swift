@@ -188,11 +188,13 @@ struct CardsView: View {
                 selectedImage = img
                 log(String(format: "Image ready. bytes=%d, dims=%dx%d", data.count, Int(img.size.width), Int(img.size.height)))
 
-                let allowed = store.categories.map { $0.name }
+                let allowedCats = store.categories.map { $0.name }
+                let allowedTags = store.tags.map { $0.name }
                 let txns = try await ChatGPTService.shared.analyzeTransactions(
                     image: img,
                     log: { self.log($0) },
-                    allowedCategories: allowed
+                    allowedCategories: allowedCats,
+                    allowedTags: allowedTags
                 )
                 if txns.isEmpty { log("No transactions parsed."); return }
 
@@ -204,7 +206,8 @@ struct CardsView: View {
                         return store.categoryID(named: "Other") ?? store.categories.first?.id
                     }()
                     let date = parseDateISO(t.date) ?? Date()
-                    let p = Purchase(date: date, merchant: t.merchant, amount: t.amount, categoryID: catID, notes: nil, ocrText: nil)
+                    let tagIDs = (t.tags ?? []).compactMap { store.tagID(named: $0) }
+                    let p = Purchase(date: date, merchant: t.merchant, amount: t.amount, categoryID: catID, notes: nil, ocrText: nil, tagIDs: tagIDs)
                     store.addPurchase(p)
                     imported += 1
                     log("Imported: \(t.merchant) - \(String(format: "%.2f", t.amount)) \(t.category ?? "")")
@@ -329,10 +332,12 @@ struct CardsView: View {
                     .onChange(of: naturalText) { _, newVal in
                         Task {
                             guard !newVal.isEmpty else { return }
-                            let allowed = store.categories.map { $0.name }
+                            let allowedCats = store.categories.map { $0.name }
+                            let allowedTags = store.tags.map { $0.name }
                             if let result = try? await ChatGPTService.shared.analyze(
                                 text: newVal,
-                                allowedCategories: allowed
+                                allowedCategories: allowedCats,
+                                allowedTags: allowedTags
                             ) {
                                 if let a = result.total {
                                     amountString = String(format: "%.2f", a)

@@ -231,11 +231,13 @@ struct AddPurchaseSheet: View {
         if isAnalyzing == false { isAnalyzing = true }
         defer { isAnalyzing = false }
         do {
-            let allowed = store.categories.map { $0.name }
+            let allowedCats = store.categories.map { $0.name }
+            let allowedTags = store.tags.map { $0.name }
             let txns = try await ChatGPTService.shared.analyzeTransactions(
                 image: image,
                 log: { self.log($0) },
-                allowedCategories: allowed
+                allowedCategories: allowedCats,
+                allowedTags: allowedTags
             )
             if txns.isEmpty { log("No transactions parsed."); return }
 
@@ -256,12 +258,14 @@ struct AddPurchaseSheet: View {
                     return store.categoryID(named: "Other") ?? store.categories.first?.id
                 }()
                 let date = parseDateISO(t.date) ?? Date()
+                let tagIDs = (t.tags ?? []).compactMap { store.tagID(named: $0) }
                 drafts.append(DraftPurchase(
                     merchant: t.merchant,
                     amountString: String(format: "%.2f", t.amount),
                     selectedCategoryID: catID,
                     notes: "",
-                    date: date
+                    date: date,
+                    selectedTagIDs: Set(tagIDs)
                 ))
                 added += 1
             }
@@ -384,74 +388,3 @@ private struct DraftRow: View {
     }
 }
 
-// MARK: - Tag Picker Sheet
-
-private struct TagPickerSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var store: AppStore
-    @State private var query: String = ""
-    @Binding var selected: Set<UUID>
-
-    private var filtered: [Tag] {
-        if query.trimmingCharacters(in: .whitespaces).isEmpty { return store.tags }
-        return store.tags.filter { $0.name.localizedCaseInsensitiveContains(query) }
-    }
-
-    var body: some View {
-        NavigationStack {
-            VStack {
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                    TextField("Search tags", text: $query)
-                        .textInputAutocapitalization(.words)
-                }
-                .padding(10)
-                .background(Color.cardBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(.subtleOutline))
-                .padding()
-
-                List {
-                    ForEach(filtered) { tag in
-                        Button {
-                            toggle(tag.id)
-                        } label: {
-                            HStack {
-                                Text(tag.name)
-                                Spacer()
-                                if selected.contains(tag.id) {
-                                    Image(systemName: "checkmark.circle.fill")
-                                }
-                            }
-                        }
-                    }
-                    if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                       store.tags.first(where: { $0.name.caseInsensitiveCompare(query) == .orderedSame }) == nil {
-                        Section {
-                            Button {
-                                let created = store.addTag(name: query)
-                                selected.insert(created.id)
-                                query = ""
-                            } label: {
-                                HStack {
-                                    Image(systemName: "plus.circle.fill")
-                                    Text("Create “\(query)”")
-                                }
-                            }
-                        }
-                    }
-                }
-                .listStyle(.insetGrouped)
-            }
-            .navigationTitle("Select Tags")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-    }
-
-    private func toggle(_ id: UUID) {
-        if selected.contains(id) { selected.remove(id) } else { selected.insert(id) }
-    }
-}

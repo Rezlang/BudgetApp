@@ -28,6 +28,8 @@
 		B1CEDE612E483E87003A0BBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1CEDE602E483E87003A0BBC /* Assets.xcassets */; };
 		B1CEDE632E483F6B003A0BBC /* BudgetAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE622E483F6B003A0BBC /* BudgetAppApp.swift */; };
 		B1CEDE662E4840C4003A0BBC /* TileCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE652E4840C4003A0BBC /* TileCard.swift */; };
+                951EC15A502843B0BC16125A /* TagPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25588815A3374A8AA138CBFB /* TagPickerSheet.swift */; };
+                37AF2F3569E04D5FA53E13A4 /* PurchaseListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F3A64B4D144A4C8C2FCE52 /* PurchaseListView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +74,8 @@
 		B1CEDE602E483E87003A0BBC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B1CEDE622E483F6B003A0BBC /* BudgetAppApp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BudgetAppApp.swift; sourceTree = "<group>"; };
 		B1CEDE652E4840C4003A0BBC /* TileCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TileCard.swift; path = BudgetApp/Views/Shared/TileCard.swift; sourceTree = SOURCE_ROOT; };
+                25588815A3374A8AA138CBFB /* TagPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TagPickerSheet.swift; path = budgetApp/Views/TagPickerSheet.swift; sourceTree = SOURCE_ROOT; };
+                78F3A64B4D144A4C8C2FCE52 /* PurchaseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PurchaseListView.swift; path = budgetApp/Views/Budget/PurchaseListView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -180,6 +184,7 @@
 				B1CEDE472E483BEF003A0BBC /* AddPurchaseSheet.swift */,
 				B1CEDE492E483BF3003A0BBC /* CameraPicker.swift */,
 				B1CEDE5C2E483CED003A0BBC /* SettingsSheet.swift */,
+                                25588815A3374A8AA138CBFB /* TagPickerSheet.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -204,6 +209,7 @@
 			children = (
 				B1CEDE412E483BD7003A0BBC /* BudgetView.swift */,
 				B1CEDE452E483BE7003A0BBC /* BudgetSubviews.swift */,
+                                78F3A64B4D144A4C8C2FCE52 /* PurchaseListView.swift */,
 			);
 			path = Budget;
 			sourceTree = "<group>";
@@ -363,6 +369,10 @@
 				B1CEDE402E483BC7003A0BBC /* RootView.swift in Sources */,
 				B1CEDE482E483BEF003A0BBC /* AddPurchaseSheet.swift in Sources */,
 				B1CEDE442E483BDF003A0BBC /* PurchaseEditorSheet.swift in Sources */,
+
+                                951EC15A502843B0BC16125A /* TagPickerSheet.swift in Sources */,
+                                37AF2F3569E04D5FA53E13A4 /* PurchaseListView.swift in Sources */,
+
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

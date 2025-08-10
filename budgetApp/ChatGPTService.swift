@@ -10,9 +10,10 @@ struct ReceiptAnalysis: Decodable {
     let total: Double?
     let category: String?
     let recommendedCard: String?
+    let tags: [String]?
 
     enum CodingKeys: String, CodingKey {
-        case merchant, total, category
+        case merchant, total, category, tags
         case recommendedCard = "recommended_card"
     }
 }
@@ -22,19 +23,21 @@ struct ReceiptTransaction: Decodable {
     let amount: Double
     let category: String?
     let date: String?
+    let tags: [String]?
 
     enum CodingKeys: String, CodingKey {
-        case merchant, category, date
+        case merchant, category, date, tags
         case amount
         case total
     }
 
     // Memberwise initializer so we can build one manually after normalization
-    init(merchant: String, amount: Double, category: String?, date: String?) {
+    init(merchant: String, amount: Double, category: String?, date: String?, tags: [String]? = nil) {
         self.merchant = merchant
         self.amount = amount
         self.category = category
         self.date = date
+        self.tags = tags
     }
 
     // Decodable initializer for model output that may vary field names/types
@@ -62,6 +65,13 @@ struct ReceiptTransaction: Decodable {
         // optional fields
         self.category = try? c.decode(String.self, forKey: .category)
         self.date = try? c.decode(String.self, forKey: .date)
+        if let arr = try? c.decode([String].self, forKey: .tags) {
+            self.tags = arr
+        } else if let single = try? c.decode(String.self, forKey: .tags) {
+            self.tags = [single]
+        } else {
+            self.tags = nil
+        }
     }
 }
 
@@ -78,7 +88,8 @@ final class ChatGPTService {
         image: UIImage? = nil,
         text: String? = nil,
         log: ((String)->Void)? = nil,
-        allowedCategories: [String]? = nil
+        allowedCategories: [String]? = nil,
+        allowedTags: [String] = []
     ) async throws -> ReceiptAnalysis {
         func stamp(_ s: String) { let line = "\(Self.ts()) \(s)"; log?(line); print(line); logger.debug("\(line)") }
         stamp("BEGIN analyze(image:\(image != nil), text:\(text?.isEmpty == false))")
@@ -99,18 +110,22 @@ final class ChatGPTService {
         }
 
         let closedSet = (allowedCategories ?? []).joined(separator: ", ")
+        let tagSet = allowedTags.joined(separator: ", ")
         let system = """
         You are a budgeting assistant. Return ONE JSON OBJECT ONLY (no markdown).
-        Keys: merchant (string), total (number), category (string), recommended_card (string).
+        Keys: merchant (string), total (number), category (string), recommended_card (string), tags ([string]).
 
         Category must be chosen ONLY from this closed set (case-insensitive, return the exact label as written):
         [\(closedSet)]
+
+        Tags are optional. If any apply, choose only from this list (case-insensitive):
+        [\(tagSet)]
+        If no tags apply, return an empty array.
 
         If ambiguous between travel-related food and restaurant, prefer "Dining".
         If a merchant looks like a supermarket/market/grocer, prefer "Groceries".
         Use "Other" only when none clearly apply.
         """
-
         let messages: [[String: Any]] = [
             ["role": "system", "content": system],
             ["role": "user", "content": userContent]
@@ -164,7 +179,8 @@ final class ChatGPTService {
         image: UIImage? = nil,
         text: String? = nil,
         log: ((String)->Void)? = nil,
-        allowedCategories: [String]
+        allowedCategories: [String],
+        allowedTags: [String] = []
     ) async throws -> [ReceiptTransaction] {
         func stamp(_ s: String) { let line = "\(Self.ts()) \(s)"; log?(line); print(line); logger.debug("\(line)") }
         stamp("BEGIN analyzeTransactions(image:\(image != nil), text:\(text?.isEmpty == false))")
@@ -185,13 +201,18 @@ final class ChatGPTService {
         }
 
         let closedSet = allowedCategories.joined(separator: ", ")
+        let tagSet = allowedTags.joined(separator: ", ")
         let system = """
         You extract INDIVIDUAL card transactions from statements or app screenshots.
         Ignore any overall totals or running balances. Output JSON ONLY (no markdown).
-        Respond as: { "transactions": [ { "merchant": string, "amount": number, "category": string, "date": "YYYY-MM-DD" } ... ] }
+        Respond as: { "transactions": [ { "merchant": string, "amount": number, "category": string, "date": "YYYY-MM-DD", "tags": [string] } ... ] }
 
         Category must be chosen ONLY from this closed set (case-insensitive, return the exact label as written):
         [\(closedSet)]
+
+        Tags are optional. If any apply, choose only from this list (case-insensitive):
+        [\(tagSet)]
+        If no tags apply, use an empty array.
 
         Ambiguity policy:
         - If a merchant looks like restaurant, cafe, bar, fast food, pizza, sushi, bakery, etc. => choose "Dining" (even if traveling).
@@ -203,7 +224,6 @@ final class ChatGPTService {
         Use positive amounts. Omit any summary lines like "Posted Total".
         Convert visible dates like "Aug 7, 2025" to "2025-08-07"; if not visible, omit date.
         """
-
         let messages: [[String: Any]] = [
             ["role": "system", "content": system],
             ["role": "user", "content": userContent]
@@ -252,7 +272,7 @@ final class ChatGPTService {
             txns = txns.map { t in
                 var cat = t.category
                 cat = normalizeCategory(cat, allowed: allowedCategories)
-                return ReceiptTransaction(merchant: t.merchant, amount: t.amount, category: cat, date: t.date)
+                return ReceiptTransaction(merchant: t.merchant, amount: t.amount, category: cat, date: t.date, tags: t.tags)
             }
 
             stamp("DECODE OK: \(txns.count) transactions (normalized categories).")
@@ -332,7 +352,7 @@ final class ChatGPTService {
 
     private func normalizeSingle(_ r: ReceiptAnalysis, allowed: [String]) -> ReceiptAnalysis {
         let cat = normalizeCategory(r.category, allowed: allowed)
-        return ReceiptAnalysis(merchant: r.merchant, total: r.total, category: cat, recommendedCard: r.recommendedCard)
+        return ReceiptAnalysis(merchant: r.merchant, total: r.total, category: cat, recommendedCard: r.recommendedCard, tags: r.tags)
     }
 }
 

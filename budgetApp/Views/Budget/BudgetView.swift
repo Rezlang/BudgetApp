@@ -15,6 +15,7 @@ struct BudgetView: View {
     
     // Purchase editing (item-based sheet)
     @State private var editingPurchase: Purchase?
+    @State private var purchaseFilter: PurchaseFilter?
 
     // Wiggle driver (subtle, like cards)
     @State private var wiggleOn = false
@@ -65,6 +66,8 @@ struct BudgetView: View {
                                 if editingMode {
                                     editingCategory = cat
                                     showCategoryEditor = true
+                                } else {
+                                    purchaseFilter = .category(cat)
                                 }
                             }
                             
@@ -113,10 +116,16 @@ struct BudgetView: View {
                 .padding(.horizontal)
 
                 // TAGS BAR (under budgets)
-                TagsBar(tags: store.tags, onAddTapped: {
-                    newTagName = ""
-                    showNewTagSheet = true
-                })
+                TagsBar(
+                    tags: store.tags,
+                    onAddTapped: {
+                        newTagName = ""
+                        showNewTagSheet = true
+                    },
+                    onTagTapped: { tag in
+                        purchaseFilter = .tag(tag)
+                    }
+                )
                 .padding(.horizontal)
                 .padding(.top, 6)
 
@@ -185,6 +194,9 @@ struct BudgetView: View {
                 }
             }
         }
+        .navigationDestination(item: $purchaseFilter) { filter in
+            PurchaseListView(filter: filter).environmentObject(store)
+        }
         .sheet(isPresented: $showAddPurchase) {
             AddPurchaseSheet().environmentObject(store)
         }
@@ -238,6 +250,7 @@ struct BudgetView: View {
 
 private struct TagsBar: View {
     var tags: [Tag]
+    var onTagTapped: (Tag) -> Void
     var onAddTapped: () -> Void
     
     var body: some View {
@@ -259,7 +272,10 @@ private struct TagsBar: View {
                     .buttonStyle(.plain)
                     
                     ForEach(tags) { tag in
-                        TagChip(text: tag.name)
+                        Button { onTagTapped(tag) } label: {
+                            TagChip(text: tag.name)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
