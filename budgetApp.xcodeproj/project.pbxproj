@@ -22,7 +22,7 @@
 		B1CEDE552E483C78003A0BBC /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE542E483C78003A0BBC /* AppAppearance.swift */; };
 		B1CEDE572E483C8B003A0BBC /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE562E483C8B003A0BBC /* Models.swift */; };
 		B1CEDE592E483CC4003A0BBC /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE582E483CC4003A0BBC /* AppStore.swift */; };
-		B1CEDE5B2E483CD1003A0BBC /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE5A2E483CD1003A0BBC /* OCRService.swift */; };
+		B1CEDE5B2E483CD1003A0BBC /* ChatGPTService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE5A2E483CD1003A0BBC /* ChatGPTService.swift */; };
 		B1CEDE5D2E483CED003A0BBC /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE5C2E483CED003A0BBC /* SettingsSheet.swift */; };
 		B1CEDE612E483E87003A0BBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1CEDE602E483E87003A0BBC /* Assets.xcassets */; };
 		B1CEDE632E483F6B003A0BBC /* BudgetAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE622E483F6B003A0BBC /* BudgetAppApp.swift */; };
@@ -65,7 +65,7 @@
 		B1CEDE542E483C78003A0BBC /* AppAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppAppearance.swift; path = BudgetApp/AppAppearance.swift; sourceTree = SOURCE_ROOT; };
 		B1CEDE562E483C8B003A0BBC /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Models.swift; path = BudgetApp/Models.swift; sourceTree = SOURCE_ROOT; };
 		B1CEDE582E483CC4003A0BBC /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppStore.swift; path = BudgetApp/AppStore.swift; sourceTree = SOURCE_ROOT; };
-		B1CEDE5A2E483CD1003A0BBC /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OCRService.swift; path = BudgetApp/OCRService.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE5A2E483CD1003A0BBC /* ChatGPTService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatGPTService.swift; path = BudgetApp/ChatGPTService.swift; sourceTree = SOURCE_ROOT; };
 		B1CEDE5C2E483CED003A0BBC /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsSheet.swift; path = BudgetApp/Views/SettingsSheet.swift; sourceTree = SOURCE_ROOT; };
 		B1CEDE602E483E87003A0BBC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B1CEDE622E483F6B003A0BBC /* BudgetAppApp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BudgetAppApp.swift; sourceTree = "<group>"; };
@@ -127,7 +127,7 @@
 				B1CEDE542E483C78003A0BBC /* AppAppearance.swift */,
 				B1CEDE562E483C8B003A0BBC /* Models.swift */,
 				B1CEDE582E483CC4003A0BBC /* AppStore.swift */,
-				B1CEDE5A2E483CD1003A0BBC /* OCRService.swift */,
+				B1CEDE5A2E483CD1003A0BBC /* ChatGPTService.swift */,
 				B1CEDE602E483E87003A0BBC /* Assets.xcassets */,
 			);
 			path = budgetApp;
@@ -346,7 +346,7 @@
 				B1CEDE512E483C26003A0BBC /* Recommenders.swift in Sources */,
 				B1CEDE5D2E483CED003A0BBC /* SettingsSheet.swift in Sources */,
 				B1CEDE462E483BE7003A0BBC /* BudgetSubviews.swift in Sources */,
-				B1CEDE5B2E483CD1003A0BBC /* OCRService.swift in Sources */,
+				B1CEDE5B2E483CD1003A0BBC /* ChatGPTService.swift in Sources */,
 				B1CEDE4A2E483BF3003A0BBC /* CameraPicker.swift in Sources */,
 				B1CEDE402E483BC7003A0BBC /* RootView.swift in Sources */,
 				B1CEDE482E483BEF003A0BBC /* AddPurchaseSheet.swift in Sources */,
