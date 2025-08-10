@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum PurchaseFilter: Identifiable {
+enum PurchaseFilter: Identifiable, Hashable {
     case category(CategoryItem)
     case tag(Tag)
 
@@ -10,7 +10,17 @@ enum PurchaseFilter: Identifiable {
         case .tag(let t): return t.id
         }
     }
+
+    // Make Hashable/Equatable depend only on the underlying id.
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    static func == (lhs: PurchaseFilter, rhs: PurchaseFilter) -> Bool {
+        lhs.id == rhs.id
+    }
 }
+
 
 struct PurchaseListView: View {
     @EnvironmentObject var store: AppStore

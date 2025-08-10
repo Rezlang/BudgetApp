@@ -232,13 +232,14 @@ struct AddPurchaseSheet: View {
         defer { isAnalyzing = false }
         do {
             let allowedCats = store.categories.map { $0.name }
-            let allowedTags = store.tags.map { $0.name }
+            // let allowedTags = store.tags.map { $0.name } // not needed for this call in this target
+
             let txns = try await ChatGPTService.shared.analyzeTransactions(
                 image: image,
                 log: { self.log($0) },
-                allowedCategories: allowedCats,
-                allowedTags: allowedTags
+                allowedCategories: allowedCats
             )
+
             if txns.isEmpty { log("No transactions parsed."); return }
 
             // FIX: if we seeded a single empty manual row, replace it instead of leaving it behind
@@ -258,14 +259,14 @@ struct AddPurchaseSheet: View {
                     return store.categoryID(named: "Other") ?? store.categories.first?.id
                 }()
                 let date = parseDateISO(t.date) ?? Date()
-                let tagIDs = (t.tags ?? []).compactMap { store.tagID(named: $0) }
+//                let tagIDs = (t.tags ?? []).compactMap { store.tagID(named: $0) }
                 drafts.append(DraftPurchase(
                     merchant: t.merchant,
                     amountString: String(format: "%.2f", t.amount),
                     selectedCategoryID: catID,
                     notes: "",
-                    date: date,
-                    selectedTagIDs: Set(tagIDs)
+                    date: date
+//                    selectedTagIDs: Set(tagIDs)
                 ))
                 added += 1
             }

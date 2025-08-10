@@ -118,16 +118,17 @@ struct BudgetView: View {
                 // TAGS BAR (under budgets)
                 TagsBar(
                     tags: store.tags,
+                    onTagTapped: { tag in
+                        purchaseFilter = .tag(tag)
+                    },
                     onAddTapped: {
                         newTagName = ""
                         showNewTagSheet = true
-                    },
-                    onTagTapped: { tag in
-                        purchaseFilter = .tag(tag)
                     }
                 )
                 .padding(.horizontal)
                 .padding(.top, 6)
+
 
                 // Purchases list + tap to edit
                 VStack(alignment: .leading, spacing: 8) {
