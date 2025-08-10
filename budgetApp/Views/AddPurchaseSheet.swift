@@ -1,6 +1,5 @@
 // File: Views/Budget/AddPurchaseSheet.swift
-// Add multiple purchases at once: from image (auto-list) and manual (add more with +)
-// Includes on-screen debug console and per-line editing (merchant, amount, category, notes)
+// Add multiple purchases at once with tags. Fix: replace seeded empty manual row with first camera/photo import.
 
 import SwiftUI
 import PhotosUI
@@ -13,6 +12,7 @@ private struct DraftPurchase: Identifiable, Equatable {
     var selectedCategoryID: UUID?
     var notes: String
     var date: Date
+    var selectedTagIDs: Set<UUID>       // NEW: chosen tags for this draft line
 
     init(
         id: UUID = UUID(),
@@ -20,7 +20,8 @@ private struct DraftPurchase: Identifiable, Equatable {
         amountString: String = "",
         selectedCategoryID: UUID? = nil,
         notes: String = "",
-        date: Date = Date()
+        date: Date = Date(),
+        selectedTagIDs: Set<UUID> = []
     ) {
         self.id = id
         self.merchant = merchant
@@ -28,6 +29,7 @@ private struct DraftPurchase: Identifiable, Equatable {
         self.selectedCategoryID = selectedCategoryID
         self.notes = notes
         self.date = date
+        self.selectedTagIDs = selectedTagIDs
     }
 
     var amount: Double {
@@ -51,7 +53,11 @@ struct AddPurchaseSheet: View {
 
     // Multiple draft rows
     @State private var drafts: [DraftPurchase] = []
+    @State private var seededEmptyRow = false     // NEW: track if we added the initial placeholder row
 
+    // Tag picker presentation
+    @State private var showTagPickerForDraftID: UUID?
+    
     // Debug lines
     @State private var debugLines: [String] = []
 
@@ -124,18 +130,33 @@ struct AddPurchaseSheet: View {
                             ForEach($drafts) { $draft in
                                 DraftRow(
                                     draft: $draft,
-                                    categories: store.categories
-                                ) {
-                                    // delete
-                                    if let idx = drafts.firstIndex(where: { $0.id == draft.id }) {
-                                        drafts.remove(at: idx)
+                                    categories: store.categories,
+                                    allTags: store.tags,
+                                    onDelete: {
+                                        if let idx = drafts.firstIndex(where: { $0.id == draft.id }) {
+                                            drafts.remove(at: idx)
+                                        }
+                                    },
+                                    onAddTags: {
+                                        showTagPickerForDraftID = draft.id
                                     }
+                                )
+                                .sheet(item: Binding.constant(showTagPickerForDraftID == draft.id ? draft : nil), onDismiss: {
+                                    showTagPickerForDraftID = nil
+                                }) { _ in
+                                    TagPickerSheet(
+                                        selected: Binding(
+                                            get: { draft.selectedTagIDs },
+                                            set: { draft.selectedTagIDs = $0 }
+                                        )
+                                    )
+                                    .environmentObject(store)
                                 }
                             }
                         }
                     }
 
-                    // Debug console (from prior step)
+                    // Debug console
                     DebugConsoleView(title: "ChatGPT Debug (Add Purchase)", lines: $debugLines)
                 }
                 .padding()
@@ -161,10 +182,11 @@ struct AddPurchaseSheet: View {
                 Task { await analyzeImageToDrafts(img) }
             }
             .onAppear {
-                // Start with one empty manual row for convenience
+                // Start with one empty manual row for convenience, mark it as seeded
                 if drafts.isEmpty {
                     let catID = store.categoryID(named: "Other") ?? store.categories.first?.id
                     drafts = [DraftPurchase(selectedCategoryID: catID)]
+                    seededEmptyRow = true
                 }
             }
         }
@@ -209,9 +231,23 @@ struct AddPurchaseSheet: View {
         if isAnalyzing == false { isAnalyzing = true }
         defer { isAnalyzing = false }
         do {
-            let txns = try await ChatGPTService.shared.analyzeTransactions(image: image, log: { self.log($0) })
+            let allowed = store.categories.map { $0.name }
+            let txns = try await ChatGPTService.shared.analyzeTransactions(
+                image: image,
+                log: { self.log($0) },
+                allowedCategories: allowed
+            )
             if txns.isEmpty { log("No transactions parsed."); return }
 
+            // FIX: if we seeded a single empty manual row, replace it instead of leaving it behind
+            if seededEmptyRow,
+               drafts.count == 1,
+               drafts[0].merchant.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               drafts[0].isValid == false {
+                drafts.removeAll()
+                seededEmptyRow = false
+            }
+            
             var added = 0
             for t in txns {
                 guard t.amount > 0 else { continue }
@@ -244,7 +280,8 @@ struct AddPurchaseSheet: View {
                 amount: d.amount,
                 categoryID: d.selectedCategoryID,
                 notes: d.notes.isEmpty ? nil : d.notes,
-                ocrText: nil
+                ocrText: nil,
+                tagIDs: Array(d.selectedTagIDs) // NEW
             )
             store.addPurchase(p)
             if !d.merchant.isEmpty,
@@ -263,7 +300,9 @@ struct AddPurchaseSheet: View {
 private struct DraftRow: View {
     @Binding var draft: DraftPurchase
     let categories: [CategoryItem]
+    let allTags: [Tag]
     var onDelete: () -> Void
+    var onAddTags: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -298,6 +337,40 @@ private struct DraftRow: View {
                 .pickerStyle(.menu)
             }
 
+            // Tags row
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Tags").font(.subheadline)
+                    Spacer()
+                    Button {
+                        onAddTags()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "plus.circle.fill")
+                            Text("Add Tags")
+                        }
+                    }
+                }
+                if draft.selectedTagIDs.isEmpty {
+                    Text("No tags").foregroundColor(.secondary).font(.footnote)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(Array(draft.selectedTagIDs), id: \.self) { tid in
+                                let name = allTags.first(where: { $0.id == tid })?.name ?? "Tag"
+                                Text(name)
+                                    .font(.footnote)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color.cardBackground)
+                                    .clipShape(Capsule())
+                                    .overlay(Capsule().stroke(.subtleOutline))
+                            }
+                        }
+                    }
+                }
+            }
+
             TextField("Notes (optional)", text: $draft.notes)
                 .textFieldStyle(.roundedBorder)
 
@@ -308,5 +381,77 @@ private struct DraftRow: View {
         .padding()
         .background(Color.cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.subtleOutline))
+    }
+}
+
+// MARK: - Tag Picker Sheet
+
+private struct TagPickerSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var store: AppStore
+    @State private var query: String = ""
+    @Binding var selected: Set<UUID>
+
+    private var filtered: [Tag] {
+        if query.trimmingCharacters(in: .whitespaces).isEmpty { return store.tags }
+        return store.tags.filter { $0.name.localizedCaseInsensitiveContains(query) }
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                    TextField("Search tags", text: $query)
+                        .textInputAutocapitalization(.words)
+                }
+                .padding(10)
+                .background(Color.cardBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(.subtleOutline))
+                .padding()
+
+                List {
+                    ForEach(filtered) { tag in
+                        Button {
+                            toggle(tag.id)
+                        } label: {
+                            HStack {
+                                Text(tag.name)
+                                Spacer()
+                                if selected.contains(tag.id) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                }
+                            }
+                        }
+                    }
+                    if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                       store.tags.first(where: { $0.name.caseInsensitiveCompare(query) == .orderedSame }) == nil {
+                        Section {
+                            Button {
+                                let created = store.addTag(name: query)
+                                selected.insert(created.id)
+                                query = ""
+                            } label: {
+                                HStack {
+                                    Image(systemName: "plus.circle.fill")
+                                    Text("Create “\(query)”")
+                                }
+                            }
+                        }
+                    }
+                }
+                .listStyle(.insetGrouped)
+            }
+            .navigationTitle("Select Tags")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func toggle(_ id: UUID) {
+        if selected.contains(id) { selected.remove(id) } else { selected.insert(id) }
     }
 }

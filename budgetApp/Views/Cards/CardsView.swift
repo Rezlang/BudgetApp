@@ -187,11 +187,15 @@ struct CardsView: View {
                let img = UIImage(data: data) {
                 selectedImage = img
                 log(String(format: "Image ready. bytes=%d, dims=%dx%d", data.count, Int(img.size.width), Int(img.size.height)))
-                
-                // NEW: multi-extract
-                let txns = try await ChatGPTService.shared.analyzeTransactions(image: img, log: { self.log($0) })
+
+                let allowed = store.categories.map { $0.name }
+                let txns = try await ChatGPTService.shared.analyzeTransactions(
+                    image: img,
+                    log: { self.log($0) },
+                    allowedCategories: allowed
+                )
                 if txns.isEmpty { log("No transactions parsed."); return }
-                
+
                 var imported = 0
                 for t in txns {
                     guard t.amount > 0 else { continue }
@@ -306,8 +310,9 @@ struct CardsView: View {
         }
     }
     
-    // MARK: - Sections (split to keep type-checker fast)
-    
+    // File: Views/Cards/CardsView.swift
+    // Replace the PurchasePlannerSection with this version (only this type)
+
     private struct PurchasePlannerSection: View {
         @EnvironmentObject var store: AppStore
         @Binding var naturalText: String
@@ -324,7 +329,11 @@ struct CardsView: View {
                     .onChange(of: naturalText) { _, newVal in
                         Task {
                             guard !newVal.isEmpty else { return }
-                            if let result = try? await ChatGPTService.shared.analyze(text: newVal) {
+                            let allowed = store.categories.map { $0.name }
+                            if let result = try? await ChatGPTService.shared.analyze(
+                                text: newVal,
+                                allowedCategories: allowed
+                            ) {
                                 if let a = result.total {
                                     amountString = String(format: "%.2f", a)
                                 }
@@ -339,6 +348,7 @@ struct CardsView: View {
             .padding(.horizontal)
         }
     }
+
     
     private struct ReceiptPickerSection: View {
         @Binding var selectedPhoto: PhotosPickerItem?
