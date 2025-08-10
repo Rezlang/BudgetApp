@@ -1,3 +1,7 @@
+// File: Views/Budget/BudgetView.swift
+// Reorder only when "Move Categories" tile is tapped; handle buttons appear on tiles.
+// The two control tiles ("New Category" and "Move Categories") are always last.
+
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -9,10 +13,13 @@ struct BudgetView: View {
     @State private var editingCategory: CategoryItem?
     @State private var showCategoryEditor = false
     
+    // Purchase editing
     @State private var editingPurchase: Purchase?
     @State private var showPurchaseEditor = false
-    
+
+    // Wiggle driver
     @State private var wiggleOn = false
+    // Reorder state
     @State private var draggingCategory: CategoryItem?
 
     let columns = [GridItem(.flexible()), GridItem(.flexible())]
@@ -38,6 +45,7 @@ struct BudgetView: View {
 
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 12) {
+                    // Regular category tiles
                     ForEach(store.categories) { cat in
                         let spentAmt = spent(for: cat)
 
@@ -59,14 +67,17 @@ struct BudgetView: View {
                                 }
                             }
                             
+                            // Drag handle appears only in edit mode
                             if editingMode {
                                 HandleDragButton()
                                     .padding(6)
-                                    .draggable(NSItemProvider(object: cat.id.uuidString as NSString)) {
+                                    .onDrag {
                                         draggingCategory = cat
+                                        return NSItemProvider(object: cat.id.uuidString as NSString)
                                     }
                             }
                         }
+                        // OnDrop to reorder (keeps scrolling intact)
                         .onDrop(of: [UTType.text],
                                 delegate: BudgetReorderDropDelegate(
                                     current: $draggingCategory,
@@ -83,6 +94,7 @@ struct BudgetView: View {
                         )
                     }
                     
+                    // Control tiles: always last
                     AddCategoryCard {
                         editingMode = true
                         wiggleOn = true
@@ -97,6 +109,7 @@ struct BudgetView: View {
                 }
                 .padding(.horizontal)
 
+                // Purchases list + tap to edit
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Recent Purchases").font(.headline)
@@ -197,6 +210,7 @@ private struct HandleDragButton: View {
     }
 }
 
+// DropDelegate
 private struct BudgetReorderDropDelegate: DropDelegate {
     @Binding var current: CategoryItem?
     let item: CategoryItem

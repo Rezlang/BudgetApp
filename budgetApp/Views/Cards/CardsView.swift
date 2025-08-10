@@ -55,7 +55,7 @@ struct CardsView: View {
                             if cardsEditingMode {
                                 HandleDragButton()
                                     .padding(6)
-                                    .draggable(card.id.uuidString) {
+                                    .onDrag {
                                         draggingCard = card
                                         return NSItemProvider(object: card.id.uuidString as NSString)
                                     }
