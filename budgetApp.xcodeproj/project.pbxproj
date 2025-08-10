@@ -7,25 +7,24 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B1CEDDFB2E47C71A003A0BBC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDDFA2E47C71A003A0BBC /* ContentView.swift */; };
-		B1CEDDFD2E47C71B003A0BBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1CEDDFC2E47C71B003A0BBC /* Assets.xcassets */; };
-		B1CEDE002E47C71B003A0BBC /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1CEDDFF2E47C71B003A0BBC /* Preview Assets.xcassets */; };
 		B1CEDE0A2E47C71B003A0BBC /* budgetAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE092E47C71B003A0BBC /* budgetAppTests.swift */; };
 		B1CEDE142E47C71B003A0BBC /* budgetAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE132E47C71B003A0BBC /* budgetAppUITests.swift */; };
 		B1CEDE162E47C71B003A0BBC /* budgetAppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE152E47C71B003A0BBC /* budgetAppUITestsLaunchTests.swift */; };
-		B1CEDE232E47C7FB003A0BBC /* budgetAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE222E47C7FB003A0BBC /* budgetAppApp.swift */; };
-		B1CEDE252E47CE81003A0BBC /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE242E47CE81003A0BBC /* Models.swift */; };
-		B1CEDE272E47CE94003A0BBC /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE262E47CE94003A0BBC /* AppStore.swift */; };
-		B1CEDE292E47CEAD003A0BBC /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE282E47CEAD003A0BBC /* OCRService.swift */; };
-		B1CEDE2C2E47CED1003A0BBC /* Recommenders.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE2B2E47CED1003A0BBC /* Recommenders.swift */; };
-		B1CEDE2F2E47CEF3003A0BBC /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE2E2E47CEF3003A0BBC /* RootView.swift */; };
-		B1CEDE312E47CF20003A0BBC /* BudgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE302E47CF20003A0BBC /* BudgetView.swift */; };
-		B1CEDE332E47CF33003A0BBC /* BudgetSubviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE322E47CF33003A0BBC /* BudgetSubviews.swift */; };
-		B1CEDE352E47CF55003A0BBC /* AddPurchaseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE342E47CF55003A0BBC /* AddPurchaseSheet.swift */; };
-		B1CEDE372E47CF67003A0BBC /* CameraPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE362E47CF67003A0BBC /* CameraPicker.swift */; };
-		B1CEDE392E47CF74003A0BBC /* CardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE382E47CF74003A0BBC /* CardsView.swift */; };
-		B1CEDE3B2E47DC00003A0BBC /* CardEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE3A2E47DC00003A0BBC /* CardEditorSheet.swift */; };
-		B1CEDE3D2E47E2EF003A0BBC /* PurchaseEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE3C2E47E2EF003A0BBC /* PurchaseEditorSheet.swift */; };
+		B1CEDE402E483BC7003A0BBC /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE3F2E483BC7003A0BBC /* RootView.swift */; };
+		B1CEDE422E483BD7003A0BBC /* BudgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE412E483BD7003A0BBC /* BudgetView.swift */; };
+		B1CEDE442E483BDF003A0BBC /* PurchaseEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE432E483BDF003A0BBC /* PurchaseEditorSheet.swift */; };
+		B1CEDE462E483BE7003A0BBC /* BudgetSubviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE452E483BE7003A0BBC /* BudgetSubviews.swift */; };
+		B1CEDE482E483BEF003A0BBC /* AddPurchaseSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE472E483BEF003A0BBC /* AddPurchaseSheet.swift */; };
+		B1CEDE4A2E483BF3003A0BBC /* CameraPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE492E483BF3003A0BBC /* CameraPicker.swift */; };
+		B1CEDE4C2E483BF9003A0BBC /* CardsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE4B2E483BF9003A0BBC /* CardsView.swift */; };
+		B1CEDE4E2E483C00003A0BBC /* CardEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE4D2E483C00003A0BBC /* CardEditorSheet.swift */; };
+		B1CEDE512E483C26003A0BBC /* Recommenders.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE502E483C26003A0BBC /* Recommenders.swift */; };
+		B1CEDE552E483C78003A0BBC /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE542E483C78003A0BBC /* AppAppearance.swift */; };
+		B1CEDE572E483C8B003A0BBC /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE562E483C8B003A0BBC /* Models.swift */; };
+		B1CEDE592E483CC4003A0BBC /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE582E483CC4003A0BBC /* AppStore.swift */; };
+		B1CEDE5B2E483CD1003A0BBC /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE5A2E483CD1003A0BBC /* OCRService.swift */; };
+		B1CEDE5D2E483CED003A0BBC /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE5C2E483CED003A0BBC /* SettingsSheet.swift */; };
+		B1CEDE612E483E87003A0BBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1CEDE602E483E87003A0BBC /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,27 +46,26 @@
 
 /* Begin PBXFileReference section */
 		B1CEDDF52E47C71A003A0BBC /* budgetApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = budgetApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		B1CEDDFA2E47C71A003A0BBC /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		B1CEDDFC2E47C71B003A0BBC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		B1CEDDFF2E47C71B003A0BBC /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		B1CEDE052E47C71B003A0BBC /* budgetAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = budgetAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1CEDE092E47C71B003A0BBC /* budgetAppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = budgetAppTests.swift; sourceTree = "<group>"; };
 		B1CEDE0F2E47C71B003A0BBC /* budgetAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = budgetAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1CEDE132E47C71B003A0BBC /* budgetAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = budgetAppUITests.swift; sourceTree = "<group>"; };
 		B1CEDE152E47C71B003A0BBC /* budgetAppUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = budgetAppUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		B1CEDE222E47C7FB003A0BBC /* budgetAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = budgetAppApp.swift; sourceTree = "<group>"; };
-		B1CEDE242E47CE81003A0BBC /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		B1CEDE262E47CE94003A0BBC /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
-		B1CEDE282E47CEAD003A0BBC /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
-		B1CEDE2B2E47CED1003A0BBC /* Recommenders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Recommenders.swift; sourceTree = "<group>"; };
-		B1CEDE2E2E47CEF3003A0BBC /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		B1CEDE302E47CF20003A0BBC /* BudgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetView.swift; sourceTree = "<group>"; };
-		B1CEDE322E47CF33003A0BBC /* BudgetSubviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetSubviews.swift; sourceTree = "<group>"; };
-		B1CEDE342E47CF55003A0BBC /* AddPurchaseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPurchaseSheet.swift; sourceTree = "<group>"; };
-		B1CEDE362E47CF67003A0BBC /* CameraPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPicker.swift; sourceTree = "<group>"; };
-		B1CEDE382E47CF74003A0BBC /* CardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardsView.swift; sourceTree = "<group>"; };
-		B1CEDE3A2E47DC00003A0BBC /* CardEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardEditorSheet.swift; sourceTree = "<group>"; };
-		B1CEDE3C2E47E2EF003A0BBC /* PurchaseEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseEditorSheet.swift; sourceTree = "<group>"; };
+		B1CEDE3F2E483BC7003A0BBC /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RootView.swift; path = budgetApp/Views/RootView.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE412E483BD7003A0BBC /* BudgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BudgetView.swift; path = BudgetApp/Views/BudgetView.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE432E483BDF003A0BBC /* PurchaseEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PurchaseEditorSheet.swift; path = BudgetApp/Views/PurchaseEditorSheet.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE452E483BE7003A0BBC /* BudgetSubviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BudgetSubviews.swift; path = BudgetApp/Views/BudgetSubviews.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE472E483BEF003A0BBC /* AddPurchaseSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AddPurchaseSheet.swift; path = BudgetApp/Views/AddPurchaseSheet.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE492E483BF3003A0BBC /* CameraPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CameraPicker.swift; path = BudgetApp/Views/CameraPicker.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE4B2E483BF9003A0BBC /* CardsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CardsView.swift; path = BudgetApp/Views/CardsView.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE4D2E483C00003A0BBC /* CardEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CardEditorSheet.swift; path = BudgetApp/Views/CardEditorSheet.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE502E483C26003A0BBC /* Recommenders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Recommenders.swift; path = BudgetApp/Logic/Recommenders.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE542E483C78003A0BBC /* AppAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppAppearance.swift; path = BudgetApp/AppAppearance.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE562E483C8B003A0BBC /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Models.swift; path = BudgetApp/Models.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE582E483CC4003A0BBC /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppStore.swift; path = BudgetApp/AppStore.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE5A2E483CD1003A0BBC /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = OCRService.swift; path = BudgetApp/OCRService.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE5C2E483CED003A0BBC /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsSheet.swift; path = BudgetApp/Views/SettingsSheet.swift; sourceTree = SOURCE_ROOT; };
+		B1CEDE602E483E87003A0BBC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -118,25 +116,16 @@
 		B1CEDDF72E47C71A003A0BBC /* budgetApp */ = {
 			isa = PBXGroup;
 			children = (
+				B1CEDE5F2E483DFF003A0BBC /* Preview Content */,
 				B1CEDE2D2E47CEE3003A0BBC /* Views */,
 				B1CEDE2A2E47CEBF003A0BBC /* Logic */,
-				B1CEDE222E47C7FB003A0BBC /* budgetAppApp.swift */,
-				B1CEDE242E47CE81003A0BBC /* Models.swift */,
-				B1CEDE262E47CE94003A0BBC /* AppStore.swift */,
-				B1CEDE282E47CEAD003A0BBC /* OCRService.swift */,
-				B1CEDDFA2E47C71A003A0BBC /* ContentView.swift */,
-				B1CEDDFC2E47C71B003A0BBC /* Assets.xcassets */,
-				B1CEDDFE2E47C71B003A0BBC /* Preview Content */,
+				B1CEDE542E483C78003A0BBC /* AppAppearance.swift */,
+				B1CEDE562E483C8B003A0BBC /* Models.swift */,
+				B1CEDE582E483CC4003A0BBC /* AppStore.swift */,
+				B1CEDE5A2E483CD1003A0BBC /* OCRService.swift */,
+				B1CEDE602E483E87003A0BBC /* Assets.xcassets */,
 			);
 			path = budgetApp;
-			sourceTree = "<group>";
-		};
-		B1CEDDFE2E47C71B003A0BBC /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				B1CEDDFF2E47C71B003A0BBC /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
 			sourceTree = "<group>";
 		};
 		B1CEDE082E47C71B003A0BBC /* budgetAppTests */ = {
@@ -159,7 +148,7 @@
 		B1CEDE2A2E47CEBF003A0BBC /* Logic */ = {
 			isa = PBXGroup;
 			children = (
-				B1CEDE2B2E47CED1003A0BBC /* Recommenders.swift */,
+				B1CEDE502E483C26003A0BBC /* Recommenders.swift */,
 			);
 			path = Logic;
 			sourceTree = "<group>";
@@ -167,16 +156,24 @@
 		B1CEDE2D2E47CEE3003A0BBC /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				B1CEDE2E2E47CEF3003A0BBC /* RootView.swift */,
-				B1CEDE302E47CF20003A0BBC /* BudgetView.swift */,
-				B1CEDE3C2E47E2EF003A0BBC /* PurchaseEditorSheet.swift */,
-				B1CEDE322E47CF33003A0BBC /* BudgetSubviews.swift */,
-				B1CEDE342E47CF55003A0BBC /* AddPurchaseSheet.swift */,
-				B1CEDE362E47CF67003A0BBC /* CameraPicker.swift */,
-				B1CEDE382E47CF74003A0BBC /* CardsView.swift */,
-				B1CEDE3A2E47DC00003A0BBC /* CardEditorSheet.swift */,
+				B1CEDE3F2E483BC7003A0BBC /* RootView.swift */,
+				B1CEDE412E483BD7003A0BBC /* BudgetView.swift */,
+				B1CEDE432E483BDF003A0BBC /* PurchaseEditorSheet.swift */,
+				B1CEDE452E483BE7003A0BBC /* BudgetSubviews.swift */,
+				B1CEDE472E483BEF003A0BBC /* AddPurchaseSheet.swift */,
+				B1CEDE492E483BF3003A0BBC /* CameraPicker.swift */,
+				B1CEDE4B2E483BF9003A0BBC /* CardsView.swift */,
+				B1CEDE4D2E483C00003A0BBC /* CardEditorSheet.swift */,
+				B1CEDE5C2E483CED003A0BBC /* SettingsSheet.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		B1CEDE5F2E483DFF003A0BBC /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = "Preview Content";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -283,8 +280,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B1CEDE002E47C71B003A0BBC /* Preview Assets.xcassets in Resources */,
-				B1CEDDFD2E47C71B003A0BBC /* Assets.xcassets in Resources */,
+				B1CEDE612E483E87003A0BBC /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -309,20 +305,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B1CEDE292E47CEAD003A0BBC /* OCRService.swift in Sources */,
-				B1CEDE312E47CF20003A0BBC /* BudgetView.swift in Sources */,
-				B1CEDE352E47CF55003A0BBC /* AddPurchaseSheet.swift in Sources */,
-				B1CEDE372E47CF67003A0BBC /* CameraPicker.swift in Sources */,
-				B1CEDE252E47CE81003A0BBC /* Models.swift in Sources */,
-				B1CEDE232E47C7FB003A0BBC /* budgetAppApp.swift in Sources */,
-				B1CEDE392E47CF74003A0BBC /* CardsView.swift in Sources */,
-				B1CEDDFB2E47C71A003A0BBC /* ContentView.swift in Sources */,
-				B1CEDE332E47CF33003A0BBC /* BudgetSubviews.swift in Sources */,
-				B1CEDE3D2E47E2EF003A0BBC /* PurchaseEditorSheet.swift in Sources */,
-				B1CEDE2F2E47CEF3003A0BBC /* RootView.swift in Sources */,
-				B1CEDE3B2E47DC00003A0BBC /* CardEditorSheet.swift in Sources */,
-				B1CEDE272E47CE94003A0BBC /* AppStore.swift in Sources */,
-				B1CEDE2C2E47CED1003A0BBC /* Recommenders.swift in Sources */,
+				B1CEDE4E2E483C00003A0BBC /* CardEditorSheet.swift in Sources */,
+				B1CEDE572E483C8B003A0BBC /* Models.swift in Sources */,
+				B1CEDE422E483BD7003A0BBC /* BudgetView.swift in Sources */,
+				B1CEDE552E483C78003A0BBC /* AppAppearance.swift in Sources */,
+				B1CEDE592E483CC4003A0BBC /* AppStore.swift in Sources */,
+				B1CEDE4C2E483BF9003A0BBC /* CardsView.swift in Sources */,
+				B1CEDE512E483C26003A0BBC /* Recommenders.swift in Sources */,
+				B1CEDE5D2E483CED003A0BBC /* SettingsSheet.swift in Sources */,
+				B1CEDE462E483BE7003A0BBC /* BudgetSubviews.swift in Sources */,
+				B1CEDE5B2E483CD1003A0BBC /* OCRService.swift in Sources */,
+				B1CEDE4A2E483BF3003A0BBC /* CameraPicker.swift in Sources */,
+				B1CEDE402E483BC7003A0BBC /* RootView.swift in Sources */,
+				B1CEDE482E483BEF003A0BBC /* AddPurchaseSheet.swift in Sources */,
+				B1CEDE442E483BDF003A0BBC /* PurchaseEditorSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
