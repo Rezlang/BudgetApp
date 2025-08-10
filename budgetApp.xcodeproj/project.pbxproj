@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B15974442E490FD500E7D322 /* DebugConsole.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15974432E490FD500E7D322 /* DebugConsole.swift */; };
 		B1CEDE0A2E47C71B003A0BBC /* budgetAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE092E47C71B003A0BBC /* budgetAppTests.swift */; };
 		B1CEDE142E47C71B003A0BBC /* budgetAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE132E47C71B003A0BBC /* budgetAppUITests.swift */; };
 		B1CEDE162E47C71B003A0BBC /* budgetAppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE152E47C71B003A0BBC /* budgetAppUITestsLaunchTests.swift */; };
@@ -47,6 +48,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B15974432E490FD500E7D322 /* DebugConsole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DebugConsole.swift; path = BudgetApp/Debug/DebugConsole.swift; sourceTree = SOURCE_ROOT; };
 		B1CEDDF52E47C71A003A0BBC /* budgetApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = budgetApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1CEDE052E47C71B003A0BBC /* budgetAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = budgetAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1CEDE092E47C71B003A0BBC /* budgetAppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = budgetAppTests.swift; sourceTree = "<group>"; };
@@ -97,6 +99,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B15974422E490FC100E7D322 /* Debug */ = {
+			isa = PBXGroup;
+			children = (
+				B15974432E490FD500E7D322 /* DebugConsole.swift */,
+			);
+			path = Debug;
+			sourceTree = "<group>";
+		};
 		B1CEDDEC2E47C71A003A0BBC = {
 			isa = PBXGroup;
 			children = (
@@ -120,6 +130,7 @@
 		B1CEDDF72E47C71A003A0BBC /* budgetApp */ = {
 			isa = PBXGroup;
 			children = (
+				B15974422E490FC100E7D322 /* Debug */,
 				B1CEDE622E483F6B003A0BBC /* BudgetAppApp.swift */,
 				B1CEDE5F2E483DFF003A0BBC /* Preview Content */,
 				B1CEDE2D2E47CEE3003A0BBC /* Views */,
@@ -335,6 +346,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B15974442E490FD500E7D322 /* DebugConsole.swift in Sources */,
 				B1CEDE4E2E483C00003A0BBC /* CardEditorSheet.swift in Sources */,
 				B1CEDE662E4840C4003A0BBC /* TileCard.swift in Sources */,
 				B1CEDE572E483C8B003A0BBC /* Models.swift in Sources */,

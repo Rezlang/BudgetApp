@@ -1,59 +1,98 @@
 // File: Views/Budget/AddPurchaseSheet.swift
-// Add purchase: Take Picture + Choose Image + Manual section
-// Purple accents applied
+// Add multiple purchases at once: from image (auto-list) and manual (add more with +)
+// Includes on-screen debug console and per-line editing (merchant, amount, category, notes)
 
 import SwiftUI
 import PhotosUI
 import UIKit
 
+private struct DraftPurchase: Identifiable, Equatable {
+    let id: UUID
+    var merchant: String
+    var amountString: String
+    var selectedCategoryID: UUID?
+    var notes: String
+    var date: Date
+
+    init(
+        id: UUID = UUID(),
+        merchant: String = "",
+        amountString: String = "",
+        selectedCategoryID: UUID? = nil,
+        notes: String = "",
+        date: Date = Date()
+    ) {
+        self.id = id
+        self.merchant = merchant
+        self.amountString = amountString
+        self.selectedCategoryID = selectedCategoryID
+        self.notes = notes
+        self.date = date
+    }
+
+    var amount: Double {
+        Double(amountString.filter { "0123456789.-".contains($0) }) ?? 0
+    }
+
+    var isValid: Bool {
+        amount > 0
+    }
+}
+
 struct AddPurchaseSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var store: AppStore
-    
+
+    // Image import
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var isAnalyzing = false
     @State private var showCamera = false
-    
-    // Manual fields
-    @State private var merchant: String = ""
-    @State private var amountString: String = ""
-    @State private var notes: String = ""
-    @State private var selectedCategoryID: UUID? = nil
-    
-    var parsedAmount: Double? { Double(amountString.filter { "0123456789.".contains($0) }) }
-    
+
+    // Multiple draft rows
+    @State private var drafts: [DraftPurchase] = []
+
+    // Debug lines
+    @State private var debugLines: [String] = []
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Button {
-                        showCamera = true
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: "camera.fill")
-                            Text("Take Picture")
-                            Spacer()
-                            Image(systemName: "sparkles")
+
+                    // Camera + Photo Import
+                    HStack(spacing: 10) {
+                        Button {
+                            showCamera = true
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "camera.fill")
+                                Text("Take Picture")
+                                Spacer()
+                                Image(systemName: "sparkles")
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(.purpleWash, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.subtleOutline))
                         }
-                        .padding()
-                        .background(.purpleWash, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.subtleOutline))
-                    }
-                    
-                    Text("Or Upload Receipt / Screenshot")
-                        .font(.headline)
-                    PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                        HStack {
-                            Image(systemName: "photo.on.rectangle")
-                            Text("Choose Image")
-                            Spacer()
-                            if isAnalyzing { ProgressView() }
+                        .buttonStyle(.plain)
+
+                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                            HStack {
+                                Image(systemName: "photo.on.rectangle")
+                                Text(isAnalyzing ? "Analyzing…" : "Choose Image")
+                                Spacer()
+                                if isAnalyzing { ProgressView() }
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.subtleOutline))
                         }
-                        .padding()
-                        .background(Color.cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.subtleOutline))
+                        .buttonStyle(.plain)
                     }
+
                     if let img = selectedImage {
                         Image(uiImage: img)
                             .resizable()
@@ -61,70 +100,56 @@ struct AddPurchaseSheet: View {
                             .frame(maxHeight: 200)
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
-                    
-                    Group {
-                        Text("Manual").font(.headline)
-                        TextField("Merchant", text: $merchant)
-                            .textFieldStyle(.roundedBorder)
-                        TextField("Amount (e.g. 23.45)", text: $amountString)
-                            .keyboardType(.decimalPad)
-                            .textFieldStyle(.roundedBorder)
-                        Picker("Category", selection: Binding(
-                            get: { selectedCategoryID ?? store.categoryID(named: "Other") },
-                            set: { selectedCategoryID = $0 }
-                        )) {
-                            ForEach(store.categories) { c in
-                                Text(c.name).tag(Optional.some(c.id))
+
+                    // Manual section header with "+" to add rows
+                    HStack {
+                        Text("Manual Entries").font(.headline)
+                        Spacer()
+                        Button {
+                            let catID = store.categoryID(named: "Other") ?? store.categories.first?.id
+                            drafts.append(DraftPurchase(selectedCategoryID: catID))
+                        } label: {
+                            Label("Add Line", systemImage: "plus.circle.fill")
+                                .labelStyle(.titleAndIcon)
+                        }
+                        .accessibilityIdentifier("AddManualLineButton")
+                    }
+
+                    // Draft list editor
+                    VStack(spacing: 12) {
+                        if drafts.isEmpty {
+                            Text("No draft purchases yet. Add some manually or import from a receipt/statement image.")
+                                .foregroundColor(.secondary)
+                        } else {
+                            ForEach($drafts) { $draft in
+                                DraftRow(
+                                    draft: $draft,
+                                    categories: store.categories
+                                ) {
+                                    // delete
+                                    if let idx = drafts.firstIndex(where: { $0.id == draft.id }) {
+                                        drafts.remove(at: idx)
+                                    }
+                                }
                             }
                         }
-                        .pickerStyle(.menu)
-                        TextField("Notes (optional)", text: $notes)
-                            .textFieldStyle(.roundedBorder)
                     }
-                    
-                    if let catID = selectedCategoryID,
-                       let cat = store.categories.first(where: { $0.id == catID }),
-                       let amt = parsedAmount, amt > 0 {
-                        let rec = CardRecommender.bestCard(for: cat.name, amount: amt, from: store.cards)
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Recommended Card").font(.headline)
-                            HStack {
-                                Image(systemName: "creditcard.fill")
-                                Text(rec.card.name).bold()
-                                Spacer()
-                                Text(String(format: "%.0fx", rec.mult))
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .padding()
-                        .background(.purpleWash, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.subtleOutline))
-                    }
+
+                    // Debug console (from prior step)
+                    DebugConsoleView(title: "ChatGPT Debug (Add Purchase)", lines: $debugLines)
                 }
                 .padding()
             }
-            .navigationTitle("Add Purchase")
+            .navigationTitle("Add Purchases")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") {
-                        let amt = parsedAmount ?? 0
-                        let p = Purchase(
-                            merchant: merchant.isEmpty ? "Unknown" : merchant,
-                            amount: amt,
-                            categoryID: selectedCategoryID,
-                            notes: notes.isEmpty ? nil : notes,
-                            ocrText: nil
-                        )
-                        store.addPurchase(p)
-                        if !merchant.isEmpty, let catName = store.categories.first(where: { $0.id == selectedCategoryID })?.name {
-                            store.remember(merchant: merchant, categoryName: catName)
-                        }
-                        dismiss()
+                    Button("Save All") {
+                        saveAll()
                     }
-                    .disabled((parsedAmount ?? 0) <= 0)
+                    .disabled(!drafts.contains(where: { $0.isValid }))
                 }
             }
             .sheet(isPresented: $showCamera) {
@@ -133,35 +158,155 @@ struct AddPurchaseSheet: View {
             .task(id: selectedPhoto) { await handleSelectedPhoto() }
             .onChange(of: selectedImage) { _, newImg in
                 guard let img = newImg else { return }
-                Task { await runAnalysis(on: img) }
+                Task { await analyzeImageToDrafts(img) }
             }
             .onAppear {
-                selectedCategoryID = selectedCategoryID ?? store.categoryID(named: "Other") ?? store.categories.first?.id
+                // Start with one empty manual row for convenience
+                if drafts.isEmpty {
+                    let catID = store.categoryID(named: "Other") ?? store.categories.first?.id
+                    drafts = [DraftPurchase(selectedCategoryID: catID)]
+                }
             }
         }
     }
+
+    // MARK: - Helpers
+
+    private func log(_ s: String) {
+        let f = DateFormatter(); f.dateFormat = "HH:mm:ss.SSS"
+        debugLines.append("\(f.string(from: Date())) \(s)")
+        if debugLines.count > 400 { debugLines.removeFirst(debugLines.count - 400) }
+    }
+
+    private func parseDateISO(_ s: String?) -> Date? {
+        guard let s = s, !s.isEmpty else { return nil }
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withFullDate]
+        return iso.date(from: s)
+    }
+
     private func handleSelectedPhoto() async {
         guard let item = selectedPhoto else { return }
+        if isAnalyzing { log("Skip: analyze already running"); return }
         isAnalyzing = true
         defer { isAnalyzing = false }
         do {
+            log("Selected photo. Loading data…")
             if let data = try await item.loadTransferable(type: Data.self),
                let img = UIImage(data: data) {
                 selectedImage = img
-                await runAnalysis(on: img)
+                log(String(format: "Image ready. bytes=%d, dims=%dx%d", data.count, Int(img.size.width), Int(img.size.height)))
+                await analyzeImageToDrafts(img)
+            } else {
+                log("ERROR: unable to decode image from picked data.")
             }
-        } catch { }
+        } catch {
+            log("ERROR: handleSelectedPhoto failed: \(error.localizedDescription)")
+        }
     }
 
-    private func runAnalysis(on image: UIImage) async {
+    private func analyzeImageToDrafts(_ image: UIImage) async {
+        if isAnalyzing == false { isAnalyzing = true }
+        defer { isAnalyzing = false }
         do {
-            let result = try await ChatGPTService.shared.analyze(image: image)
-            if let merch = result.merchant, merchant.isEmpty { merchant = merch }
-            if let amt = result.total { amountString = String(format: "%.2f", amt) }
-            if let catName = result.category,
-               let id = store.categoryID(named: catName) {
-                selectedCategoryID = id
+            let txns = try await ChatGPTService.shared.analyzeTransactions(image: image, log: { self.log($0) })
+            if txns.isEmpty { log("No transactions parsed."); return }
+
+            var added = 0
+            for t in txns {
+                guard t.amount > 0 else { continue }
+                let catID: UUID? = {
+                    if let c = t.category, let id = store.categoryID(named: c) { return id }
+                    return store.categoryID(named: "Other") ?? store.categories.first?.id
+                }()
+                let date = parseDateISO(t.date) ?? Date()
+                drafts.append(DraftPurchase(
+                    merchant: t.merchant,
+                    amountString: String(format: "%.2f", t.amount),
+                    selectedCategoryID: catID,
+                    notes: "",
+                    date: date
+                ))
+                added += 1
             }
-        } catch { }
+            log("Created \(added) draft line(s) from image.")
+        } catch {
+            log("ERROR: analyzeTransactions() failed: \(error.localizedDescription)")
+        }
+    }
+
+    private func saveAll() {
+        var saved = 0
+        for d in drafts where d.isValid {
+            let p = Purchase(
+                date: d.date,
+                merchant: d.merchant.isEmpty ? "Unknown" : d.merchant,
+                amount: d.amount,
+                categoryID: d.selectedCategoryID,
+                notes: d.notes.isEmpty ? nil : d.notes,
+                ocrText: nil
+            )
+            store.addPurchase(p)
+            if !d.merchant.isEmpty,
+               let catName = store.categories.first(where: { $0.id == d.selectedCategoryID })?.name {
+                store.remember(merchant: d.merchant, categoryName: catName)
+            }
+            saved += 1
+        }
+        log("Saved \(saved) purchase(s).")
+        dismiss()
+    }
+}
+
+// MARK: - Draft Row UI
+
+private struct DraftRow: View {
+    @Binding var draft: DraftPurchase
+    let categories: [CategoryItem]
+    var onDelete: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                TextField("Merchant", text: $draft.merchant)
+                    .textInputAutocapitalization(.words)
+                    .textFieldStyle(.roundedBorder)
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .accessibilityIdentifier("DeleteDraftRowButton")
+            }
+
+            HStack(spacing: 12) {
+                TextField("Amount (e.g. 23.45)", text: Binding(
+                    get: { draft.amountString },
+                    set: { draft.amountString = $0.filter { "0123456789.-".contains($0) } }
+                ))
+                .keyboardType(.decimalPad)
+                .textFieldStyle(.roundedBorder)
+
+                Picker("Category", selection: Binding(
+                    get: { draft.selectedCategoryID ?? categories.first?.id },
+                    set: { draft.selectedCategoryID = $0 }
+                )) {
+                    ForEach(categories) { c in
+                        Text(c.name).tag(Optional.some(c.id))
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+
+            TextField("Notes (optional)", text: $draft.notes)
+                .textFieldStyle(.roundedBorder)
+
+            DatePicker("Date", selection: $draft.date, displayedComponents: [.date])
+                .font(.footnote)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .background(Color.cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.subtleOutline))
     }
 }
