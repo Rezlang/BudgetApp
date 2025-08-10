@@ -13,8 +13,7 @@ struct CardsView: View {
     
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var selectedImage: UIImage?
-    @State private var ocrText: String = ""
-    @State private var isOCRRunning = false
+    @State private var isAnalyzing = false
     @State private var selectedCategoryID: UUID?
     
     // Move / wiggle state
@@ -101,17 +100,15 @@ struct CardsView: View {
                     selectedCategoryID: $selectedCategoryID
                 )
                 .environmentObject(store)
-                
+
                 ReceiptPickerSection(
                     selectedPhoto: $selectedPhoto,
-                    isOCRRunning: $isOCRRunning,
+                    isAnalyzing: $isAnalyzing,
                     selectedImage: $selectedImage,
-                    ocrText: $ocrText,
                     amountString: $amountString,
                     selectedCategoryID: $selectedCategoryID
                 )
-                .environmentObject(store)
-                
+
                 DetailsSection(
                     amountString: $amountString,
                     selectedCategoryID: $selectedCategoryID
@@ -159,47 +156,22 @@ struct CardsView: View {
     
     private func handleSelectedPhoto() async {
         guard let item = selectedPhoto else { return }
-        isOCRRunning = true
-        defer { isOCRRunning = false }
+        isAnalyzing = true
+        defer { isAnalyzing = false }
         do {
             if let data = try await item.loadTransferable(type: Data.self),
                let img = UIImage(data: data) {
                 selectedImage = img
-                let text = try await OCRService.shared.recognizeText(from: img)
-                ocrText = text
-                if amountString.isEmpty, let amt = guessAmount(from: text) {
+                let result = try await ChatGPTService.shared.analyze(image: img)
+                if amountString.isEmpty, let amt = result.total {
                     amountString = String(format: "%.2f", amt)
                 }
-                let merch = guessMerchant(from: text)
-                let suggName = CategoryRecommender.suggestCategoryName(
-                    merchant: merch, ocrText: text,
-                    memory: store.categoryMemory, available: store.categories
-                )
-                selectedCategoryID = store.categoryID(named: suggName) ?? store.categories.first?.id
+                if let catName = result.category,
+                   let id = store.categoryID(named: catName) {
+                    selectedCategoryID = id
+                }
             }
         } catch { }
-    }
-    
-    private func guessMerchant(from text: String) -> String? {
-        for raw in text.split(separator: "\n").map(String.init) {
-            let lower = raw.lowercased()
-            if lower.range(of: #"[0-9]{1,2}/[0-9]{1,2}"#, options: .regularExpression) != nil { continue }
-            if lower.range(of: #"\$?\s*[0-9]+(?:\.[0-9]{1,2})?"#, options: .regularExpression) != nil { continue }
-            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.count >= 3 { return trimmed }
-        }
-        return nil
-    }
-    private func guessAmount(from text: String) -> Double? {
-        let lower = text.lowercased()
-        let regex = try? NSRegularExpression(pattern: #"\$?\s*([0-9]+(?:\.[0-9]{1,2})?)"#)
-        let matches = regex?.matches(in: lower, range: NSRange(lower.startIndex..., in: lower)) ?? []
-        if matches.isEmpty { return nil }
-        if let _ = lower.range(of: "total"),
-           let m = matches.last,
-           let r = Range(m.range(at: 1), in: lower) { return Double(lower[r]) }
-        if let m = matches.last, let r = Range(m.range(at: 1), in: lower) { return Double(lower[r]) }
-        return nil
     }
 }
 
@@ -307,15 +279,18 @@ private struct PurchasePlannerSection: View {
                 .textInputAutocapitalization(.sentences)
                 .textFieldStyle(.roundedBorder)
                 .onChange(of: naturalText) { _, newVal in
-                    let parsed = PurchaseParser.parse(newVal)
-                    if let a = parsed.amount {
-                        amountString = String(format: "%.2f", a)
+                    Task {
+                        guard !newVal.isEmpty else { return }
+                        if let result = try? await ChatGPTService.shared.analyze(text: newVal) {
+                            if let a = result.total {
+                                amountString = String(format: "%.2f", a)
+                            }
+                            if let cat = result.category,
+                               let id = store.categoryID(named: cat) {
+                                selectedCategoryID = id
+                            }
+                        }
                     }
-                    let suggestedName = CategoryRecommender.suggestCategoryName(
-                        merchant: parsed.merchant, ocrText: parsed.notes,
-                        memory: store.categoryMemory, available: store.categories
-                    )
-                    selectedCategoryID = store.categoryID(named: suggestedName) ?? store.categories.first?.id
                 }
         }
         .padding(.horizontal)
@@ -323,11 +298,9 @@ private struct PurchasePlannerSection: View {
 }
 
 private struct ReceiptPickerSection: View {
-    @EnvironmentObject var store: AppStore
     @Binding var selectedPhoto: PhotosPickerItem?
-    @Binding var isOCRRunning: Bool
+    @Binding var isAnalyzing: Bool
     @Binding var selectedImage: UIImage?
-    @Binding var ocrText: String
     @Binding var amountString: String
     @Binding var selectedCategoryID: UUID?
     
@@ -340,7 +313,7 @@ private struct ReceiptPickerSection: View {
                     Image(systemName: "photo.on.rectangle")
                     Text("Choose Image")
                     Spacer()
-                    if isOCRRunning { ProgressView() }
+                    if isAnalyzing { ProgressView() }
                 }
                 .padding()
                 .background(Color.cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -352,11 +325,6 @@ private struct ReceiptPickerSection: View {
                     .scaledToFit()
                     .frame(maxHeight: 200)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                if !ocrText.isEmpty {
-                    DisclosureGroup("Extracted Text (OCR)") {
-                        Text(ocrText).font(.footnote).foregroundColor(.secondary)
-                    }
-                }
             }
         }
         .padding(.horizontal)
