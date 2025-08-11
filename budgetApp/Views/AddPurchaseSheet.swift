@@ -1,4 +1,4 @@
-// File: Views/Budget/AddPurchaseSheet.swift
+// FILE: BudgetApp/Views/AddPurchaseSheet.swift
 // Add multiple purchases at once with tags. Fix: replace seeded empty manual row with first camera/photo import.
 
 import SwiftUI
@@ -12,7 +12,7 @@ private struct DraftPurchase: Identifiable, Equatable {
     var selectedCategoryID: UUID?
     var notes: String
     var date: Date
-    var selectedTagIDs: Set<UUID>       // NEW: chosen tags for this draft line
+    var selectedTagIDs: Set<UUID>
 
     init(
         id: UUID = UUID(),
@@ -45,28 +45,21 @@ struct AddPurchaseSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var store: AppStore
 
-    // Image import
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var isAnalyzing = false
     @State private var showCamera = false
 
-    // Multiple draft rows
     @State private var drafts: [DraftPurchase] = []
-    @State private var seededEmptyRow = false     // NEW: track if we added the initial placeholder row
+    @State private var seededEmptyRow = false
 
-    // Tag picker presentation
     @State private var showTagPickerForDraftID: UUID?
-    
-    // Debug lines
     @State private var debugLines: [String] = []
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-
-                    // Camera + Photo Import
                     HStack(spacing: 10) {
                         Button {
                             showCamera = true
@@ -107,7 +100,6 @@ struct AddPurchaseSheet: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
 
-                    // Manual section header with "+" to add rows
                     HStack {
                         Text("Manual Entries").font(.headline)
                         Spacer()
@@ -121,7 +113,6 @@ struct AddPurchaseSheet: View {
                         .accessibilityIdentifier("AddManualLineButton")
                     }
 
-                    // Draft list editor
                     VStack(spacing: 12) {
                         if drafts.isEmpty {
                             Text("No draft purchases yet. Add some manually or import from a receipt/statement image.")
@@ -156,7 +147,6 @@ struct AddPurchaseSheet: View {
                         }
                     }
 
-                    // Debug console
                     DebugConsoleView(title: "ChatGPT Debug (Add Purchase)", lines: $debugLines)
                 }
                 .padding()
@@ -182,7 +172,6 @@ struct AddPurchaseSheet: View {
                 Task { await analyzeImageToDrafts(img) }
             }
             .onAppear {
-                // Start with one empty manual row for convenience, mark it as seeded
                 if drafts.isEmpty {
                     let catID = store.categoryID(named: "Other") ?? store.categories.first?.id
                     drafts = [DraftPurchase(selectedCategoryID: catID)]
@@ -191,8 +180,6 @@ struct AddPurchaseSheet: View {
             }
         }
     }
-
-    // MARK: - Helpers
 
     private func log(_ s: String) {
         let f = DateFormatter(); f.dateFormat = "HH:mm:ss.SSS"
@@ -232,17 +219,17 @@ struct AddPurchaseSheet: View {
         defer { isAnalyzing = false }
         do {
             let allowedCats = store.categories.map { $0.name }
-            // let allowedTags = store.tags.map { $0.name } // not needed for this call in this target
+            let allowedTags = store.tags.map { $0.name }
 
             let txns = try await ChatGPTService.shared.analyzeTransactions(
                 image: image,
                 log: { self.log($0) },
-                allowedCategories: allowedCats
+                allowedCategories: allowedCats,
+                allowedTags: allowedTags
             )
 
             if txns.isEmpty { log("No transactions parsed."); return }
 
-            // FIX: if we seeded a single empty manual row, replace it instead of leaving it behind
             if seededEmptyRow,
                drafts.count == 1,
                drafts[0].merchant.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -259,14 +246,17 @@ struct AddPurchaseSheet: View {
                     return store.categoryID(named: "Other") ?? store.categories.first?.id
                 }()
                 let date = parseDateISO(t.date) ?? Date()
-//                let tagIDs = (t.tags ?? []).compactMap { store.tagID(named: $0) }
+
+                // Auto-create tags and capture IDs
+                let tagIDs = (t.tags ?? []).map { store.addTag(name: $0).id }
+
                 drafts.append(DraftPurchase(
                     merchant: t.merchant,
                     amountString: String(format: "%.2f", t.amount),
                     selectedCategoryID: catID,
                     notes: "",
-                    date: date
-//                    selectedTagIDs: Set(tagIDs)
+                    date: date,
+                    selectedTagIDs: Set(tagIDs)
                 ))
                 added += 1
             }
@@ -286,7 +276,7 @@ struct AddPurchaseSheet: View {
                 categoryID: d.selectedCategoryID,
                 notes: d.notes.isEmpty ? nil : d.notes,
                 ocrText: nil,
-                tagIDs: Array(d.selectedTagIDs) // NEW
+                tagIDs: Array(d.selectedTagIDs)
             )
             store.addPurchase(p)
             if !d.merchant.isEmpty,
@@ -299,6 +289,9 @@ struct AddPurchaseSheet: View {
         dismiss()
     }
 }
+
+// DraftRow unchanged
+
 
 // MARK: - Draft Row UI
 

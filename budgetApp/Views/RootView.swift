@@ -1,5 +1,5 @@
-// File: Views/RootView.swift
-// Tab root
+// FILE: BudgetApp/Views/RootView.swift
+// Tab root — apply accent app-wide for generic UI, but category tiles override their own colors.
 
 import SwiftUI
 
@@ -17,14 +17,13 @@ struct RootView: View {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
                                 showSettings = true
-                            } label: {
-                                Image(systemName: "gearshape.fill")
-                            }
+                            } label: { Image(systemName: "gearshape.fill") }
                         }
                     }
                     .sheet(isPresented: $showSettings) {
                         SettingsSheet()
                             .environmentObject(theme)
+                            .environmentObject(store)   // ensure store is available
                     }
             }
             .tabItem {
@@ -39,14 +38,13 @@ struct RootView: View {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
                                 showSettings = true
-                            } label: {
-                                Image(systemName: "gearshape.fill")
-                            }
+                            } label: { Image(systemName: "gearshape.fill") }
                         }
                     }
                     .sheet(isPresented: $showSettings) {
                         SettingsSheet()
                             .environmentObject(theme)
+                            .environmentObject(store)   // ensure store is available
                     }
             }
             .tabItem {
@@ -54,5 +52,6 @@ struct RootView: View {
                 Text("Credit Cards")
             }
         }
+        .tint(theme.accentColor)
     }
 }

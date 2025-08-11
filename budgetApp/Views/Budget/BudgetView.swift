@@ -1,5 +1,5 @@
 // File: Views/Budget/BudgetView.swift
-// Shows tags bar under budgets; tap + to create tags. Item-based editing for purchases remains.
+// Shows tags bar under budgets; tap + to create tags. Category tiles use each category’s color.
 
 import SwiftUI
 import UniformTypeIdentifiers
@@ -36,6 +36,7 @@ struct BudgetView: View {
 
     var body: some View {
         VStack(spacing: 12) {
+            // Overall tile (neutral styling; no category color)
             BudgetProgressCard(
                 title: "Overall",
                 spent: totalSpent,
@@ -43,7 +44,8 @@ struct BudgetView: View {
                 editing: false,
                 cornerRadius: theme.cornerRadius,
                 tileSize: .init(width: UIScreen.main.bounds.width - 32, height: 110),
-                wiggle: false
+                wiggle: false,
+                accent: nil
             )
             .padding(.horizontal)
 
@@ -51,8 +53,10 @@ struct BudgetView: View {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(store.categories) { cat in
                         let spentAmt = spent(for: cat)
+                        let accent = store.color(for: cat)      // category color from settings
 
                         ZStack(alignment: .topTrailing) {
+                            // Category tiles use the category color for progress bar + lighter edge stroke
                             BudgetProgressCard(
                                 title: cat.name,
                                 spent: spentAmt,
@@ -60,7 +64,8 @@ struct BudgetView: View {
                                 editing: editingMode,
                                 cornerRadius: theme.cornerRadius,
                                 tileSize: tileSize,
-                                wiggle: editingMode && wiggleOn
+                                wiggle: editingMode && wiggleOn,
+                                accent: accent
                             )
                             .onTapGesture {
                                 if editingMode {
@@ -129,7 +134,6 @@ struct BudgetView: View {
                 .padding(.horizontal)
                 .padding(.top, 6)
 
-
                 // Purchases list + tap to edit
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -149,13 +153,14 @@ struct BudgetView: View {
                         ForEach(store.purchases) { p in
                             PurchaseRow(
                                 purchase: p,
-                                categoryName: store.categoryName(for: p.categoryID),
+                                category: store.category(for: p.categoryID),
                                 bestCard: CardRecommender.bestCard(
                                     for: store.categoryName(for: p.categoryID),
                                     amount: p.amount,
                                     from: store.cards
                                 )
                             )
+                            .environmentObject(store)
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 editingPurchase = p
@@ -206,6 +211,8 @@ struct BudgetView: View {
                 if var existing = editingCategory {
                     existing.name = result.name
                     existing.limit = result.limit
+                    existing.iconSystemName = result.iconSystemName
+                    existing.iconColorHex = result.iconColorHex
                     store.updateCategory(existing)
                 } else {
                     store.addCategory(name: result.name, limit: result.limit)
@@ -266,9 +273,9 @@ private struct TagsBar: View {
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(Color.purple.opacity(0.12))
+                        .background(Color.cardBackground)
                         .clipShape(Capsule())
-                        .overlay(Capsule().stroke(Color.purple.opacity(0.25)))
+                        .overlay(Capsule().stroke(.subtleOutline))
                     }
                     .buttonStyle(.plain)
                     

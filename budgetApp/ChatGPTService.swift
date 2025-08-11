@@ -1,5 +1,5 @@
-// File: Services/ChatGPTService.swift
-// Multi-transaction extraction with category control + Dining/Groceries bias
+// FILE: BudgetApp/Services/ChatGPTService.swift
+// Multi-transaction extraction with category control + robust tags
 
 import Foundation
 import UIKit
@@ -31,7 +31,6 @@ struct ReceiptTransaction: Decodable {
         case total
     }
 
-    // Memberwise initializer so we can build one manually after normalization
     init(merchant: String, amount: Double, category: String?, date: String?, tags: [String]? = nil) {
         self.merchant = merchant
         self.amount = amount
@@ -40,14 +39,11 @@ struct ReceiptTransaction: Decodable {
         self.tags = tags
     }
 
-    // Decodable initializer for model output that may vary field names/types
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
 
-        // merchant
         self.merchant = (try? c.decode(String.self, forKey: .merchant)) ?? "Unknown"
 
-        // amount (accept number or string; accept "amount" or "total")
         if let a = try? c.decode(Double.self, forKey: .amount) {
             self.amount = a
         } else if let t = try? c.decode(Double.self, forKey: .total) {
@@ -62,9 +58,9 @@ struct ReceiptTransaction: Decodable {
             self.amount = 0
         }
 
-        // optional fields
         self.category = try? c.decode(String.self, forKey: .category)
         self.date = try? c.decode(String.self, forKey: .date)
+
         if let arr = try? c.decode([String].self, forKey: .tags) {
             self.tags = arr
         } else if let single = try? c.decode(String.self, forKey: .tags) {
@@ -110,7 +106,25 @@ final class ChatGPTService {
         }
 
         let closedSet = (allowedCategories ?? []).joined(separator: ", ")
-        let tagSet = allowedTags.joined(separator: ", ")
+
+        let tagClause: String = {
+            if allowedTags.isEmpty {
+                // When the app has no tags yet, allow from a sane default palette so we can auto-create them.
+                return """
+                Tags are optional. If helpful, choose up to 2 tags from this set (case-insensitive):
+                [work, reimbursable, subscription, gift, vacation, business, personal, family, urgent, recurring]
+                If no tags apply, return an empty array.
+                """
+            } else {
+                let tagSet = allowedTags.joined(separator: ", ")
+                return """
+                Tags are optional. If any apply, choose only from this list (case-insensitive):
+                [\(tagSet)]
+                If no tags apply, return an empty array.
+                """
+            }
+        }()
+
         let system = """
         You are a budgeting assistant. Return ONE JSON OBJECT ONLY (no markdown).
         Keys: merchant (string), total (number), category (string), recommended_card (string), tags ([string]).
@@ -118,9 +132,7 @@ final class ChatGPTService {
         Category must be chosen ONLY from this closed set (case-insensitive, return the exact label as written):
         [\(closedSet)]
 
-        Tags are optional. If any apply, choose only from this list (case-insensitive):
-        [\(tagSet)]
-        If no tags apply, return an empty array.
+        \(tagClause)
 
         If ambiguous between travel-related food and restaurant, prefer "Dining".
         If a merchant looks like a supermarket/market/grocer, prefer "Groceries".
@@ -174,7 +186,7 @@ final class ChatGPTService {
         } catch { stamp("ERROR: request/parse failed: \(error.localizedDescription)"); throw error }
     }
 
-    // MARK: - Multiple transactions with category guidance
+    // MARK: - Multiple transactions with category + tag guidance
     func analyzeTransactions(
         image: UIImage? = nil,
         text: String? = nil,
@@ -201,7 +213,24 @@ final class ChatGPTService {
         }
 
         let closedSet = allowedCategories.joined(separator: ", ")
-        let tagSet = allowedTags.joined(separator: ", ")
+
+        let tagClause: String = {
+            if allowedTags.isEmpty {
+                return """
+                Tags are optional. If helpful, choose up to 2 tags from this set (case-insensitive):
+                [work, reimbursable, subscription, gift, vacation, business, personal, family, urgent, recurring]
+                If no tags apply, use an empty array.
+                """
+            } else {
+                let tagSet = allowedTags.joined(separator: ", ")
+                return """
+                Tags are optional. If any apply, choose only from this list (case-insensitive):
+                [\(tagSet)]
+                If no tags apply, use an empty array.
+                """
+            }
+        }()
+
         let system = """
         You extract INDIVIDUAL card transactions from statements or app screenshots.
         Ignore any overall totals or running balances. Output JSON ONLY (no markdown).
@@ -210,9 +239,7 @@ final class ChatGPTService {
         Category must be chosen ONLY from this closed set (case-insensitive, return the exact label as written):
         [\(closedSet)]
 
-        Tags are optional. If any apply, choose only from this list (case-insensitive):
-        [\(tagSet)]
-        If no tags apply, use an empty array.
+        \(tagClause)
 
         Ambiguity policy:
         - If a merchant looks like restaurant, cafe, bar, fast food, pizza, sushi, bakery, etc. => choose "Dining" (even if traveling).
@@ -268,7 +295,6 @@ final class ChatGPTService {
                 txns = arr
             }
 
-            // Normalize categories to allowed labels
             txns = txns.map { t in
                 var cat = t.category
                 cat = normalizeCategory(cat, allowed: allowedCategories)
@@ -280,8 +306,6 @@ final class ChatGPTService {
             return txns
         } catch { stamp("ERROR: request/parse failed: \(error.localizedDescription)"); throw error }
     }
-
-    // MARK: - Utils
 
     private static func ts() -> String {
         let f = DateFormatter(); f.dateFormat = "HH:mm:ss.SSS"
@@ -322,11 +346,9 @@ final class ChatGPTService {
 
     private func normalizeCategory(_ cat: String?, allowed: [String]) -> String? {
         guard let c = cat, !c.isEmpty else { return nil }
-        // exact (case-insensitive)
         if let hit = allowed.first(where: { $0.compare(c, options: .caseInsensitive) == .orderedSame }) {
             return hit
         }
-        // simple synonyms
         let lc = c.lowercased()
         let map: [(keys: [String], target: String)] = [
             (["restaurant","food","fast food","cafe","coffee","bar","deli","pizza","sushi","burrito","taco","wing","bbq"], "Dining"),
@@ -343,7 +365,6 @@ final class ChatGPTService {
                 break
             }
         }
-        // fallback to Other if present
         if let other = allowed.first(where: { $0.caseInsensitiveCompare("Other") == .orderedSame }) {
             return other
         }

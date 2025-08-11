@@ -7,8 +7,15 @@ struct CategoryItem: Identifiable, Codable, Hashable {
     var id: UUID = UUID()
     var name: String
     var limit: Double
+
+    // NEW: per-budget icon + color (SF Symbol name + hex color)
+    // - iconSystemName defaults to "tag.fill"
+    // - iconColorHex is optional; if nil we'll show a stable random color derived from the id
+    var iconSystemName: String = "tag.fill"
+    var iconColorHex: String? = nil
 }
 
+// (rest of file unchanged)
 struct Tag: Identifiable, Codable, Equatable, Hashable {
     var id: UUID = UUID()
     var name: String
@@ -22,7 +29,7 @@ struct Purchase: Identifiable, Codable, Equatable {
     var categoryID: UUID?
     var notes: String?
     var ocrText: String?
-    var tagIDs: [UUID]          // NEW: associated tags (does not create budgets)
+    var tagIDs: [UUID]
 
     init(
         id: UUID = UUID(),
