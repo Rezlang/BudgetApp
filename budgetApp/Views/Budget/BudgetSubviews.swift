@@ -1,6 +1,6 @@
-// File: BudgetApp/Views/Budget/BudgetSubviews.swift
-// Tiles & editors. "+" tile is full height. Added MoveCategoriesTile.
-// Progress bar + edge use the category’s configured color.
+// ===== FILE: BudgetApp/Views/Budget/BudgetSubviews.swift =====
+// Tiles & editors. "+" tile is full height. Progress edge uses the category color.
+// In move mode, tiles show a pulsing dashed/solid border (no jiggle).
 
 import SwiftUI
 
@@ -11,7 +11,7 @@ struct BudgetProgressCard: View {
     var editing: Bool
     var cornerRadius: CGFloat
     var tileSize: CGSize = .init(width: UIScreen.main.bounds.width/2 - 24, height: 120)
-    /// Forward wiggle state from parent.
+    /// Wiggle is unused (no jiggle), kept for API compatibility.
     var wiggle: Bool = false
     /// Optional accent color for this tile (category color). If nil, defaults are used.
     var accent: Color? = nil
@@ -29,9 +29,10 @@ struct BudgetProgressCard: View {
             size: tileSize,
             cornerRadius: cornerRadius,
             editing: editing,
-            wiggle: wiggle,
-            background: editing ? .purpleWash : .cardBackground,
-            overlayStroke: strokeColor
+            wiggle: false,                // no jiggle
+            background: .cardBackground,  // solid, no flashing
+            overlayStroke: strokeColor,
+            dashedWhenEditing: true       // pulse between dashed and solid while moving
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
@@ -67,12 +68,12 @@ struct AddCategoryCard: View {
     var body: some View {
         Button(action: action) {
             TileCard(size: tileSize, background: .purpleWash) {
-                HStack(spacing: 10) {
+                HStack {
+                    Spacer()
                     Image(systemName: "plus.circle.fill").font(.title2)
-                    Text("New Category").font(.subheadline).bold()
                     Spacer()
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .buttonStyle(.plain)
@@ -86,25 +87,25 @@ struct MoveCategoriesTile: View {
     var body: some View {
         Button(action: action) {
             TileCard(size: tileSize, background: .cardBackground) {
-                HStack(spacing: 10) {
-                    Image(systemName: "arrow.up.arrow.down.square").font(.title2)
-                    Text("Move Categories")
-                        .font(.subheadline).bold()
+                HStack {
                     Spacer()
-                    Image(systemName: "line.3.horizontal")
-                        .foregroundStyle(.secondary)
+                    Image(systemName: "arrow.up.arrow.down.square").font(.title2)
+                    Spacer()
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("MoveCategoriesTile")
     }
 }
+// In: BudgetApp/Views/Budget/BudgetSubviews.swift
+// Replace the entire CategoryEditorSheet with this updated version:
 
 struct CategoryEditorSheet: View {
     var item: CategoryItem?
     var onSave: (CategoryItem)->Void
+    var onDelete: (() -> Void)? = nil            // <-- NEW
     @Environment(\.dismiss) private var dismiss
     
     @State private var name: String = ""
@@ -156,6 +157,18 @@ struct CategoryEditorSheet: View {
                         }
                     }
                 }
+
+                // --- NEW: destructive delete, shown only when editing an existing category
+                if item != nil, let onDelete {
+                    Section {
+                        Button(role: .destructive) {
+                            onDelete()
+                            dismiss()
+                        } label: {
+                            Label("Delete Category", systemImage: "trash")
+                        }
+                    }
+                }
             }
             .navigationTitle(item == nil ? "New Category" : "Edit Category")
             .toolbar {
@@ -193,6 +206,7 @@ struct CategoryEditorSheet: View {
         }
     }
 }
+
 
 struct PurchaseRow: View {
     let purchase: Purchase

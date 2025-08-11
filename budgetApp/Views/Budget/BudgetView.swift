@@ -1,5 +1,6 @@
-// File: Views/Budget/BudgetView.swift
-// Shows tags bar under budgets; tap + to create tags. Category tiles use each category’s color.
+// ===== FILE: BudgetApp/Views/Budget/BudgetView.swift =====
+// Budget grid with Move mode: long-press anywhere on a tile to drag; icon-only controls centered;
+// tiles pulse border between solid and dashed while moving; no jiggle.
 
 import SwiftUI
 import UniformTypeIdentifiers
@@ -17,8 +18,6 @@ struct BudgetView: View {
     @State private var editingPurchase: Purchase?
     @State private var purchaseFilter: PurchaseFilter?
 
-    // Wiggle driver (subtle, like cards)
-    @State private var wiggleOn = false
     // Reorder state
     @State private var draggingCategory: CategoryItem?
 
@@ -53,36 +52,45 @@ struct BudgetView: View {
                 LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(store.categories) { cat in
                         let spentAmt = spent(for: cat)
-                        let accent = store.color(for: cat)      // category color from settings
+                        let accent = store.color(for: cat)
 
-                        ZStack(alignment: .topTrailing) {
-                            // Category tiles use the category color for progress bar + lighter edge stroke
-                            BudgetProgressCard(
-                                title: cat.name,
-                                spent: spentAmt,
-                                limit: cat.limit,
-                                editing: editingMode,
-                                cornerRadius: theme.cornerRadius,
-                                tileSize: tileSize,
-                                wiggle: editingMode && wiggleOn,
-                                accent: accent
-                            )
-                            .onTapGesture {
+                        ZStack {
+                            Group {
                                 if editingMode {
-                                    editingCategory = cat
-                                    showCategoryEditor = true
-                                } else {
-                                    purchaseFilter = .category(cat)
-                                }
-                            }
-                            
-                            if editingMode {
-                                HandleDragButton()
-                                    .padding(6)
+                                    BudgetProgressCard(
+                                        title: cat.name,
+                                        spent: spentAmt,
+                                        limit: cat.limit,
+                                        editing: true,
+                                        cornerRadius: theme.cornerRadius,
+                                        tileSize: tileSize,
+                                        wiggle: false, // no jiggle
+                                        accent: accent
+                                    )
+                                    .onTapGesture {
+                                        // Still allow edit in move mode if desired
+                                        editingCategory = cat
+                                        showCategoryEditor = true
+                                    }
                                     .onDrag {
                                         draggingCategory = cat
                                         return NSItemProvider(object: cat.id.uuidString as NSString)
                                     }
+                                } else {
+                                    BudgetProgressCard(
+                                        title: cat.name,
+                                        spent: spentAmt,
+                                        limit: cat.limit,
+                                        editing: false,
+                                        cornerRadius: theme.cornerRadius,
+                                        tileSize: tileSize,
+                                        wiggle: false,
+                                        accent: accent
+                                    )
+                                    .onTapGesture {
+                                        purchaseFilter = .category(cat)
+                                    }
+                                }
                             }
                         }
                         .onDrop(of: [UTType.text],
@@ -106,13 +114,11 @@ struct BudgetView: View {
                         height: tileSize.height,
                         onNew: {
                             if !editingMode { editingMode = true }
-                            wiggleOn = true
                             editingCategory = nil
                             showCategoryEditor = true
                         },
                         onMoveToggle: {
                             editingMode.toggle()
-                            wiggleOn = editingMode
                             draggingCategory = nil
                         },
                         isMoveOn: editingMode
@@ -165,7 +171,6 @@ struct BudgetView: View {
                             .onTapGesture {
                                 editingPurchase = p
                             }
-                            // Show tags for each purchase (small inline chips)
                             if !p.tagIDs.isEmpty {
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 6) {
@@ -190,7 +195,6 @@ struct BudgetView: View {
                 if editingMode {
                     Button("Done") {
                         editingMode = false
-                        wiggleOn = false
                         draggingCategory = nil
                     }
                 } else {
@@ -207,17 +211,26 @@ struct BudgetView: View {
             AddPurchaseSheet().environmentObject(store)
         }
         .sheet(isPresented: $showCategoryEditor) {
-            CategoryEditorSheet(item: editingCategory) { result in
-                if var existing = editingCategory {
-                    existing.name = result.name
-                    existing.limit = result.limit
-                    existing.iconSystemName = result.iconSystemName
-                    existing.iconColorHex = result.iconColorHex
-                    store.updateCategory(existing)
-                } else {
-                    store.addCategory(name: result.name, limit: result.limit)
+            CategoryEditorSheet(
+                item: editingCategory,
+                onSave: { result in
+                    if var existing = editingCategory {
+                        existing.name = result.name
+                        existing.limit = result.limit
+                        existing.iconSystemName = result.iconSystemName
+                        existing.iconColorHex = result.iconColorHex
+                        store.updateCategory(existing)
+                    } else {
+                        store.addCategory(name: result.name, limit: result.limit)
+                    }
+                },
+                onDelete: {
+                    if let cat = editingCategory {
+                        store.categories.removeAll { $0.id == cat.id }
+                        store.persist()
+                    }
                 }
-            }
+            )
         }
         .sheet(item: $editingPurchase) { p in
             PurchaseEditorSheet(purchase: p) { updated in
@@ -254,7 +267,7 @@ struct BudgetView: View {
     }
 }
 
-// MARK: - Tags UI
+// MARK: - Tags UI (unchanged)
 
 private struct TagsBar: View {
     var tags: [Tag]
@@ -304,21 +317,7 @@ private struct TagChip: View {
     }
 }
 
-// MARK: - Controls and DropDelegate (unchanged)
-
-private struct HandleDragButton: View {
-    var body: some View {
-        Circle()
-            .fill(.ultraThinMaterial)
-            .frame(width: 34, height: 34)
-            .overlay(
-                Image(systemName: "line.3.horizontal")
-                    .foregroundStyle(.secondary)
-            )
-            .shadow(radius: 1)
-            .accessibilityLabel("Drag Handle")
-    }
-}
+// MARK: - Controls and DropDelegate (icons only, centered)
 
 private struct CombinedCategoryControlTile: View {
     let width: CGFloat
@@ -330,9 +329,9 @@ private struct CombinedCategoryControlTile: View {
     var body: some View {
         VStack(spacing: 8) {
             Button(action: onNew) {
-                HStack(spacing: 10) {
+                HStack {
+                    Spacer()
                     Image(systemName: "plus.circle.fill").font(.title2)
-                    Text("New Category").font(.subheadline).bold()
                     Spacer()
                 }
                 .padding(14)
@@ -341,14 +340,13 @@ private struct CombinedCategoryControlTile: View {
                 .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.subtleOutline))
             }
             .buttonStyle(.plain)
-            
+            .accessibilityLabel("New Category")
+
             Button(action: onMoveToggle) {
-                HStack(spacing: 10) {
-                    Image(systemName: "arrow.up.arrow.down.square").font(.title2)
-                    Text(isMoveOn ? "Done Moving" : "Move Categories")
-                        .font(.subheadline).bold()
+                HStack {
                     Spacer()
-                    Image(systemName: "line.3.horizontal").foregroundStyle(.secondary)
+                    Image(systemName: "arrow.up.arrow.down.square").font(.title2)
+                    Spacer()
                 }
                 .padding(14)
                 .frame(width: width, height: height/2)
@@ -356,6 +354,7 @@ private struct CombinedCategoryControlTile: View {
                 .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(.subtleOutline))
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(isMoveOn ? "Done Moving" : "Move Categories")
         }
         .frame(width: width, height: height)
     }

@@ -20,6 +20,7 @@ struct PurchaseListView: View {
     @EnvironmentObject var store: AppStore
     @State private var editingCategory: CategoryItem?
     @State private var editingPurchase: Purchase?        // <-- tap-to-edit
+    @Environment(\.dismiss) private var dismiss
     let filter: PurchaseFilter
 
     private var purchases: [Purchase] {
@@ -84,14 +85,28 @@ struct PurchaseListView: View {
                 }
             }
         }
-        // Edit Category sheet
+        // FILE: BudgetApp/Views/Budget/PurchaseListView.swift
+        // Replace the existing sheet(item: $editingCategory) block with this version:
+
         .sheet(item: $editingCategory) { original in
-            CategoryEditorSheet(item: original) { updated in
-                var u = updated
-                u.id = original.id
-                store.updateCategory(u)
-            }
+            CategoryEditorSheet(
+                item: original,
+                onSave: { updated in
+                    var u = updated
+                    u.id = original.id
+                    store.updateCategory(u)
+                },
+                onDelete: {
+                    // Remove the category, persist, then pop back to Budget
+                    store.categories.removeAll { $0.id == original.id }
+                    store.persist()
+                    // Pop the navigation stack after the sheet dismisses
+                    DispatchQueue.main.async { dismiss() }
+                }
+            )
         }
+
+
         // Edit Purchase sheet (can change category & tags)
         .sheet(item: $editingPurchase) { p in
             PurchaseEditorSheet(purchase: p) { updated in
