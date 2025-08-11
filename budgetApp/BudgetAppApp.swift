@@ -1,4 +1,4 @@
-// File: App/BudgetRewardsApp.swift
+// File: BudgetApp/BudgetAppApp.swift
 // Entry point + global theming
 
 import SwiftUI
@@ -11,9 +11,8 @@ struct BudgetRewardsApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(theme)
-                .tint(.purple)
+                // removed global tint
                 .preferredColorScheme(theme.effectiveColorScheme)
         }
     }
 }
-

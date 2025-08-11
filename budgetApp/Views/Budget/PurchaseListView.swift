@@ -1,3 +1,4 @@
+// File: Views/Budget/PurchaseListView.swift
 import SwiftUI
 
 enum PurchaseFilter: Identifiable, Hashable {
@@ -11,19 +12,14 @@ enum PurchaseFilter: Identifiable, Hashable {
         }
     }
 
-    // Make Hashable/Equatable depend only on the underlying id.
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-
-    static func == (lhs: PurchaseFilter, rhs: PurchaseFilter) -> Bool {
-        lhs.id == rhs.id
-    }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+    static func == (lhs: PurchaseFilter, rhs: PurchaseFilter) -> Bool { lhs.id == rhs.id }
 }
-
 
 struct PurchaseListView: View {
     @EnvironmentObject var store: AppStore
+    @State private var editingCategory: CategoryItem?
+    @State private var editingPurchase: Purchase?        // <-- tap-to-edit
     let filter: PurchaseFilter
 
     private var purchases: [Purchase] {
@@ -46,15 +42,18 @@ struct PurchaseListView: View {
         List {
             ForEach(purchases) { p in
                 VStack(alignment: .leading, spacing: 4) {
+                    let cat = store.categories.first(where: { $0.id == p.categoryID })
                     PurchaseRow(
                         purchase: p,
-                        categoryName: store.categoryName(for: p.categoryID),
+                        category: cat,
                         bestCard: CardRecommender.bestCard(
                             for: store.categoryName(for: p.categoryID),
                             amount: p.amount,
                             from: store.cards
                         )
                     )
+                    .environmentObject(store)
+
                     if !p.tagIDs.isEmpty {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 6) {
@@ -66,9 +65,45 @@ struct PurchaseListView: View {
                         .padding(.bottom, 4)
                     }
                 }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    editingPurchase = p                      // <-- present editor for this purchase
+                }
             }
         }
         .navigationTitle(title)
+        .toolbar {
+            if case .category(let cat) = filter {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        editingCategory = cat
+                    } label: {
+                        Image(systemName: "pencil")
+                    }
+                    .accessibilityIdentifier("EditCategoryFromListButton")
+                }
+            }
+        }
+        // Edit Category sheet
+        .sheet(item: $editingCategory) { original in
+            CategoryEditorSheet(item: original) { updated in
+                var u = updated
+                u.id = original.id
+                store.updateCategory(u)
+            }
+        }
+        // Edit Purchase sheet (can change category & tags)
+        .sheet(item: $editingPurchase) { p in
+            PurchaseEditorSheet(purchase: p) { updated in
+                if let idx = store.purchases.firstIndex(where: { $0.id == updated.id }) {
+                    store.purchases[idx] = updated
+                    store.persist()
+                }
+            } onDelete: {
+                store.deletePurchase(p)
+            }
+            .environmentObject(store)
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-// File: Views/Cards/CardsView.swift
+// FILE: BudgetApp/Views/Cards/CardsView.swift
 // Tap card to edit (when not moving). Combined "New + Move" control tile in one grid slot. Subtle wiggle in move mode.
 // Now includes on-screen debug console for ChatGPT receipt analysis.
 
@@ -9,6 +9,7 @@ import UniformTypeIdentifiers
 
 struct CardsView: View {
     @EnvironmentObject var store: AppStore
+    @EnvironmentObject var theme: ThemeStore
     @State private var amountString: String = ""
     @State private var naturalText: String = ""
     
@@ -17,10 +18,8 @@ struct CardsView: View {
     @State private var isAnalyzing = false
     @State private var selectedCategoryID: UUID?
     
-    // Debug console lines
     @State private var debugLines: [String] = []
     
-    // Move / wiggle state
     @State private var cardsEditingMode = false
     @State private var cardsWiggleOn = false
     @State private var editingCard: CreditCard?
@@ -38,7 +37,6 @@ struct CardsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                // Card tiles
                 LazyVGrid(columns: gridColumns, spacing: 12) {
                     ForEach(store.cards) { card in
                         ZStack(alignment: .topTrailing) {
@@ -48,12 +46,12 @@ struct CardsView: View {
                                      background: .cardBackground) {
                                 CardTileContent(card: card)
                             }
-                                     .onTapGesture {
-                                         if !cardsEditingMode {
-                                             editingCard = card
-                                             showCardEditor = true
-                                         }
-                                     }
+                            .onTapGesture {
+                                if !cardsEditingMode {
+                                    editingCard = card
+                                    showCardEditor = true
+                                }
+                            }
                             if cardsEditingMode {
                                 HandleDragButton()
                                     .padding(6)
@@ -79,7 +77,6 @@ struct CardsView: View {
                         )
                     }
                     
-                    // Combined control tile (always last)
                     CombinedCardControlTile(
                         width: tileSize.width,
                         height: tileSize.height,
@@ -97,7 +94,6 @@ struct CardsView: View {
                 }
                 .padding(.horizontal)
                 
-                // Planner / OCR / Details / Recommendation
                 PurchasePlannerSection(
                     naturalText: $naturalText,
                     amountString: $amountString,
@@ -125,7 +121,6 @@ struct CardsView: View {
                 )
                 .environmentObject(store)
                 
-                // Debug console
                 DebugConsoleView(title: "ChatGPT Debug (Cards)", lines: $debugLines)
             }
             .padding(.vertical)
@@ -158,10 +153,6 @@ struct CardsView: View {
             }
         }
     }
-    
-    // MARK: - Photo handling
-    
-    // MARK: - Photo handling
     
     private func log(_ s: String) {
         let f = DateFormatter(); f.dateFormat = "HH:mm:ss.SSS"
@@ -206,11 +197,22 @@ struct CardsView: View {
                         return store.categoryID(named: "Other") ?? store.categories.first?.id
                     }()
                     let date = parseDateISO(t.date) ?? Date()
-                    let tagIDs = (t.tags ?? []).compactMap { store.tagID(named: $0) }
-                    let p = Purchase(date: date, merchant: t.merchant, amount: t.amount, categoryID: catID, notes: nil, ocrText: nil, tagIDs: tagIDs)
+
+                    // Ensure tags exist (auto-create if needed), then attach IDs
+                    let tagIDs: [UUID] = (t.tags ?? []).map { store.addTag(name: $0).id }
+
+                    let p = Purchase(
+                        date: date,
+                        merchant: t.merchant,
+                        amount: t.amount,
+                        categoryID: catID,
+                        notes: nil,
+                        ocrText: nil,
+                        tagIDs: tagIDs
+                    )
                     store.addPurchase(p)
                     imported += 1
-                    log("Imported: \(t.merchant) - \(String(format: "%.2f", t.amount)) \(t.category ?? "")")
+                    log("Imported: \(t.merchant) - \(String(format: "%.2f", t.amount)) \(t.category ?? "") tags=\(tagIDs.count)")
                     if let c = t.category { store.remember(merchant: t.merchant, categoryName: c) }
                 }
                 log("Done. Imported \(imported) transactions.")

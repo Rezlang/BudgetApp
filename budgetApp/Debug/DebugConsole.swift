@@ -1,4 +1,4 @@
-// File: Debug/DebugConsole.swift
+// File: BudgetApp/Debug/DebugConsole.swift
 // Collapsible on-screen console for temporary diagnostics.
 
 import SwiftUI
@@ -37,7 +37,7 @@ struct DebugConsoleView: View {
                 .padding(.top, 4)
             }
             .font(.headline)
-            .tint(.purple)
+            // removed global purple tint here
         }
         .padding(.horizontal)
         .padding(.top, 6)
