@@ -79,6 +79,16 @@ final class ChatGPTService {
 
     private let logger = Logger(subsystem: "BudgetApp", category: "ChatGPTService")
 
+    private func addAuth(to request: inout URLRequest, log stamp: (String)->Void) {
+        if let stored = UserDefaults.standard.string(forKey: "chatgpt_api_key"), !stored.isEmpty {
+            request.addValue("Bearer \(stored)", forHTTPHeaderField: "Authorization"); stamp("Auth: using API key from settings")
+        } else if let key = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !key.isEmpty {
+            request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization"); stamp("Auth: using API key from environment")
+        } else {
+            stamp("ERROR: OPENAI_API_KEY not found in environment or settings. Set it in Settings or Scheme > Run > Environment Variables.")
+        }
+    }
+
     // MARK: - Single result (kept for planner text flow)
     func analyze(
         image: UIImage? = nil,
@@ -153,9 +163,7 @@ final class ChatGPTService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let key = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !key.isEmpty {
-            request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization"); stamp("Auth: using API key from environment")
-        } else { stamp("ERROR: OPENAI_API_KEY not found in environment. Set it in Scheme > Run > Environment Variables.") }
+        addAuth(to: &request, log: stamp)
 
         do {
             let body = try JSONSerialization.data(withJSONObject: payload)
@@ -266,9 +274,7 @@ final class ChatGPTService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let key = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !key.isEmpty {
-            request.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization"); stamp("Auth: using API key from environment")
-        } else { stamp("ERROR: OPENAI_API_KEY not found in environment. Set it in Scheme > Run > Environment Variables.") }
+        addAuth(to: &request, log: stamp)
 
         do {
             let body = try JSONSerialization.data(withJSONObject: payload)
