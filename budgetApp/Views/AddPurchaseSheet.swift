@@ -57,6 +57,9 @@ struct AddPurchaseSheet: View {
     @State private var debugLines: [String] = []
     @AppStorage("chatGPTDebugEnabled") private var chatGPTDebugEnabled = false
 
+    @State private var duplicateMatches: [DuplicateMatch] = []
+    @State private var showDuplicates = false
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -169,6 +172,12 @@ struct AddPurchaseSheet: View {
             .sheet(isPresented: $showCamera) {
                 CameraPicker(image: $selectedImage).ignoresSafeArea()
             }
+            .sheet(isPresented: $showDuplicates) {
+                DuplicateReviewSheet(matches: $duplicateMatches) {
+                    dismiss()
+                }
+                .environmentObject(store)
+            }
             .task(id: selectedPhoto) { await handleSelectedPhoto() }
             .onChange(of: selectedImage) { _, newImg in
                 guard let img = newImg else { return }
@@ -271,9 +280,9 @@ struct AddPurchaseSheet: View {
     }
 
     private func saveAll() {
-        var saved = 0
-        for d in drafts where d.isValid {
-            let p = Purchase(
+        let purchases: [Purchase] = drafts.compactMap { d in
+            guard d.isValid else { return nil }
+            return Purchase(
                 date: d.date,
                 merchant: d.merchant.isEmpty ? "Unknown" : d.merchant,
                 amount: d.amount,
@@ -282,15 +291,16 @@ struct AddPurchaseSheet: View {
                 ocrText: nil,
                 tagIDs: Array(d.selectedTagIDs)
             )
-            store.addPurchase(p)
-            if !d.merchant.isEmpty,
-               let catName = store.categories.first(where: { $0.id == d.selectedCategoryID })?.name {
-                store.remember(merchant: d.merchant, categoryName: catName)
-            }
-            saved += 1
         }
-        log("Saved \(saved) purchase(s).")
-        dismiss()
+        let duplicates = store.addPurchasesCheckingDuplicates(purchases)
+        if duplicates.isEmpty {
+            log("Saved \(purchases.count) purchase(s).")
+            dismiss()
+        } else {
+            duplicateMatches = duplicates
+            showDuplicates = true
+            log("Detected \(duplicates.count) potential duplicate(s).")
+        }
     }
 }
 

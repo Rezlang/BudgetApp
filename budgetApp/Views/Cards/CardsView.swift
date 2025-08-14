@@ -20,6 +20,9 @@ struct CardsView: View {
     
     @State private var debugLines: [String] = []
     @AppStorage("chatGPTDebugEnabled") private var chatGPTDebugEnabled = false
+
+    @State private var duplicateMatches: [DuplicateMatch] = []
+    @State private var showDuplicateSheet = false
     
     @State private var cardsEditingMode = false
     @State private var cardsWiggleOn = false
@@ -145,6 +148,12 @@ struct CardsView: View {
             }
             .environmentObject(store)
         }
+        .sheet(isPresented: $showDuplicateSheet) {
+            DuplicateReviewSheet(matches: $duplicateMatches) {
+                showDuplicateSheet = false
+            }
+            .environmentObject(store)
+        }
         .task(id: selectedPhoto) {
             await handleSelectedPhoto()
         }
@@ -193,7 +202,7 @@ struct CardsView: View {
                 )
                 if txns.isEmpty { log("No transactions parsed."); return }
 
-                var imported = 0
+                var toInsert: [Purchase] = []
                 for t in txns {
                     guard t.amount > 0 else { continue }
                     let catID: UUID? = {
@@ -214,12 +223,18 @@ struct CardsView: View {
                         ocrText: nil,
                         tagIDs: tagIDs
                     )
-                    store.addPurchase(p)
-                    imported += 1
-                    log("Imported: \(t.merchant) - \(String(format: "%.2f", t.amount)) \(t.category ?? "") tags=\(tagIDs.count)")
-                    if let c = t.category { store.remember(merchant: t.merchant, categoryName: c) }
+                    toInsert.append(p)
+                    log("Prepared: \(t.merchant) - \(String(format: "%.2f", t.amount)) \(t.category ?? "") tags=\(tagIDs.count)")
                 }
-                log("Done. Imported \(imported) transactions.")
+
+                let duplicates = store.addPurchasesCheckingDuplicates(toInsert)
+                if duplicates.isEmpty {
+                    log("Done. Imported \(toInsert.count) transactions.")
+                } else {
+                    duplicateMatches = duplicates
+                    showDuplicateSheet = true
+                    log("Imported \(toInsert.count - duplicates.count) transaction(s). \(duplicates.count) potential duplicate(s).")
+                }
             } else {
                 log("ERROR: Unable to decode image from picked data.")
             }
