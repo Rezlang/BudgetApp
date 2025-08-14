@@ -13,6 +13,7 @@ private struct DraftPurchase: Identifiable, Equatable {
     var notes: String
     var date: Date
     var selectedTagIDs: Set<UUID>
+    var isCredit: Bool
 
     init(
         id: UUID = UUID(),
@@ -21,7 +22,8 @@ private struct DraftPurchase: Identifiable, Equatable {
         selectedCategoryID: UUID? = nil,
         notes: String = "",
         date: Date = Date(),
-        selectedTagIDs: Set<UUID> = []
+        selectedTagIDs: Set<UUID> = [],
+        isCredit: Bool = false
     ) {
         self.id = id
         self.merchant = merchant
@@ -30,14 +32,16 @@ private struct DraftPurchase: Identifiable, Equatable {
         self.notes = notes
         self.date = date
         self.selectedTagIDs = selectedTagIDs
+        self.isCredit = isCredit
     }
 
     var amount: Double {
-        Double(amountString.filter { "0123456789.-".contains($0) }) ?? 0
+        let base = Double(amountString.filter { "0123456789.".contains($0) }) ?? 0
+        return isCredit ? -base : base
     }
 
     var isValid: Bool {
-        amount > 0
+        amount != 0
     }
 }
 
@@ -45,8 +49,9 @@ struct AddPurchaseSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var store: AppStore
 
-    @State private var selectedPhoto: PhotosPickerItem?
-    @State private var selectedImage: UIImage?
+    @State private var selectedPhotos: [PhotosPickerItem] = []
+    @State private var selectedImages: [UIImage] = []
+    @State private var cameraImage: UIImage?
     @State private var isAnalyzing = false
     @State private var showCamera = false
 
@@ -78,10 +83,10 @@ struct AddPurchaseSheet: View {
                         }
                         .buttonStyle(.plain)
 
-                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                        PhotosPicker(selection: $selectedPhotos, matching: .images) {
                             HStack {
                                 Image(systemName: "photo.on.rectangle")
-                                Text(isAnalyzing ? "Analyzing…" : "Choose Image")
+                                Text(isAnalyzing ? "Analyzing…" : "Choose Images")
                                 Spacer()
                                 if isAnalyzing { ProgressView() }
                             }
@@ -93,12 +98,18 @@ struct AddPurchaseSheet: View {
                         .buttonStyle(.plain)
                     }
 
-                    if let img = selectedImage {
-                        Image(uiImage: img)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxHeight: 200)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    if !selectedImages.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack {
+                                ForEach(Array(selectedImages.enumerated()), id: \.offset) { _, img in
+                                    Image(uiImage: img)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(maxHeight: 200)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                }
+                            }
+                        }
                     }
 
                     HStack {
@@ -167,11 +178,12 @@ struct AddPurchaseSheet: View {
                 }
             }
             .sheet(isPresented: $showCamera) {
-                CameraPicker(image: $selectedImage).ignoresSafeArea()
+                CameraPicker(image: $cameraImage).ignoresSafeArea()
             }
-            .task(id: selectedPhoto) { await handleSelectedPhoto() }
-            .onChange(of: selectedImage) { _, newImg in
+            .task(id: selectedPhotos) { await handleSelectedPhotos() }
+            .onChange(of: cameraImage) { _, newImg in
                 guard let img = newImg else { return }
+                selectedImages.append(img)
                 Task { await analyzeImageToDrafts(img) }
             }
             .onAppear {
@@ -198,23 +210,23 @@ struct AddPurchaseSheet: View {
         return iso.date(from: s)
     }
 
-    private func handleSelectedPhoto() async {
-        guard let item = selectedPhoto else { return }
-        if isAnalyzing { log("Skip: analyze already running"); return }
-        isAnalyzing = true
-        defer { isAnalyzing = false }
-        do {
-            log("Selected photo. Loading data…")
-            if let data = try await item.loadTransferable(type: Data.self),
-               let img = UIImage(data: data) {
-                selectedImage = img
-                log(String(format: "Image ready. bytes=%d, dims=%dx%d", data.count, Int(img.size.width), Int(img.size.height)))
-                await analyzeImageToDrafts(img)
-            } else {
-                log("ERROR: unable to decode image from picked data.")
+    private func handleSelectedPhotos() async {
+        let items = selectedPhotos
+        selectedPhotos = []
+        for item in items {
+            do {
+                log("Selected photo. Loading data…")
+                if let data = try await item.loadTransferable(type: Data.self),
+                   let img = UIImage(data: data) {
+                    selectedImages.append(img)
+                    log(String(format: "Image ready. bytes=%d, dims=%dx%d", data.count, Int(img.size.width), Int(img.size.height)))
+                    await analyzeImageToDrafts(img)
+                } else {
+                    log("ERROR: unable to decode image from picked data.")
+                }
+            } catch {
+                log("ERROR: handleSelectedPhoto failed: \(error.localizedDescription)")
             }
-        } catch {
-            log("ERROR: handleSelectedPhoto failed: \(error.localizedDescription)")
         }
     }
 
@@ -244,7 +256,7 @@ struct AddPurchaseSheet: View {
             
             var added = 0
             for t in txns {
-                guard t.amount > 0 else { continue }
+                guard t.amount != 0 else { continue }
                 let catID: UUID? = {
                     if let c = t.category, let id = store.categoryID(named: c) { return id }
                     return store.categoryID(named: "Other") ?? store.categories.first?.id
@@ -256,11 +268,12 @@ struct AddPurchaseSheet: View {
 
                 drafts.append(DraftPurchase(
                     merchant: t.merchant,
-                    amountString: String(format: "%.2f", t.amount),
+                    amountString: String(format: "%.2f", abs(t.amount)),
                     selectedCategoryID: catID,
                     notes: "",
                     date: date,
-                    selectedTagIDs: Set(tagIDs)
+                    selectedTagIDs: Set(tagIDs),
+                    isCredit: t.amount < 0
                 ))
                 added += 1
             }
@@ -293,10 +306,6 @@ struct AddPurchaseSheet: View {
         dismiss()
     }
 }
-
-// DraftRow unchanged
-
-
 // MARK: - Draft Row UI
 
 private struct DraftRow: View {
@@ -323,10 +332,17 @@ private struct DraftRow: View {
             HStack(spacing: 12) {
                 TextField("Amount (e.g. 23.45)", text: Binding(
                     get: { draft.amountString },
-                    set: { draft.amountString = $0.filter { "0123456789.-".contains($0) } }
+                    set: { draft.amountString = $0.filter { "0123456789.".contains($0) } }
                 ))
                 .keyboardType(.decimalPad)
                 .textFieldStyle(.roundedBorder)
+
+                Button {
+                    draft.isCredit.toggle()
+                } label: {
+                    Image(systemName: draft.isCredit ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
+                        .foregroundColor(draft.isCredit ? .green : .red)
+                }
 
                 Picker("Category", selection: Binding(
                     get: { draft.selectedCategoryID ?? categories.first?.id },
