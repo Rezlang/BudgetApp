@@ -19,6 +19,7 @@ struct CardsView: View {
     @State private var selectedCategoryID: UUID?
     
     @State private var debugLines: [String] = []
+    @AppStorage("chatGPTDebugEnabled") private var chatGPTDebugEnabled = false
     
     @State private var cardsEditingMode = false
     @State private var cardsWiggleOn = false
@@ -121,7 +122,9 @@ struct CardsView: View {
                 )
                 .environmentObject(store)
                 
-                DebugConsoleView(title: "ChatGPT Debug (Cards)", lines: $debugLines)
+                if chatGPTDebugEnabled {
+                    DebugConsoleView(title: "ChatGPT Debug (Cards)", lines: $debugLines)
+                }
             }
             .padding(.vertical)
         }
@@ -155,6 +158,7 @@ struct CardsView: View {
     }
     
     private func log(_ s: String) {
+        guard chatGPTDebugEnabled else { return }
         let f = DateFormatter(); f.dateFormat = "HH:mm:ss.SSS"
         debugLines.append("\(f.string(from: Date())) \(s)")
         if debugLines.count > 400 { debugLines.removeFirst(debugLines.count - 400) }
