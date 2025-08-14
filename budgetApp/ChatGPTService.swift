@@ -176,7 +176,7 @@ final class ChatGPTService {
             let status = (response as? HTTPURLResponse)?.statusCode ?? -1
             stamp("HTTP status=\(status)")
             let raw = String(data: data, encoding: .utf8) ?? "<non-utf8 response>"
-            stamp("Raw response (first 800 chars):\n\(raw.prefix(800))")
+            stamp("Raw response:\n\(raw)")
             guard (200...299).contains(status) else { throw URLError(.badServerResponse) }
 
             let api = try JSONDecoder().decode(ChatAPIResponse.self, from: data)
@@ -287,7 +287,7 @@ final class ChatGPTService {
             let status = (response as? HTTPURLResponse)?.statusCode ?? -1
             stamp("HTTP status=\(status)")
             let raw = String(data: data, encoding: .utf8) ?? "<non-utf8 response>"
-            stamp("Raw response (first 800 chars):\n\(raw.prefix(800))")
+            stamp("Raw response:\n\(raw)")
             guard (200...299).contains(status) else { throw URLError(.badServerResponse) }
 
             let api = try JSONDecoder().decode(ChatAPIResponse.self, from: data)

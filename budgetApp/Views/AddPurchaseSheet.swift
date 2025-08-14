@@ -55,6 +55,7 @@ struct AddPurchaseSheet: View {
 
     @State private var showTagPickerForDraftID: UUID?
     @State private var debugLines: [String] = []
+    @AppStorage("chatGPTDebugEnabled") private var chatGPTDebugEnabled = false
 
     var body: some View {
         NavigationStack {
@@ -147,7 +148,9 @@ struct AddPurchaseSheet: View {
                         }
                     }
 
-                    DebugConsoleView(title: "ChatGPT Debug (Add Purchase)", lines: $debugLines)
+                    if chatGPTDebugEnabled {
+                        DebugConsoleView(title: "ChatGPT Debug (Add Purchase)", lines: $debugLines)
+                    }
                 }
                 .padding()
             }
@@ -182,6 +185,7 @@ struct AddPurchaseSheet: View {
     }
 
     private func log(_ s: String) {
+        guard chatGPTDebugEnabled else { return }
         let f = DateFormatter(); f.dateFormat = "HH:mm:ss.SSS"
         debugLines.append("\(f.string(from: Date())) \(s)")
         if debugLines.count > 400 { debugLines.removeFirst(debugLines.count - 400) }
