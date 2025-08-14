@@ -9,6 +9,7 @@ struct SettingsSheet: View {
     @EnvironmentObject var store: AppStore
 
     @State private var showEraseConfirm = false
+    @AppStorage("chatGPTDebugEnabled") private var chatGPTDebugEnabled = false
 
     private let swatches: [Color] = [
         Color(hex: "#7F3DFF") ?? .purple,
@@ -73,6 +74,12 @@ struct SettingsSheet: View {
                     } label: {
                         Label("Clear Purchases & Reset Budgets", systemImage: "trash")
                     }
+                }
+
+                Section {
+                    Toggle("ChatGPT debug output", isOn: $chatGPTDebugEnabled)
+                } header: {
+                    Text("Developer Settings").foregroundColor(.gray)
                 }
             }
             .navigationTitle("Settings")
