@@ -244,9 +244,6 @@ struct AddPurchaseSheet: View {
             .sheet(isPresented: $showCamera) {
                 CameraPicker(image: $cameraImage).ignoresSafeArea()
             }
-            .sheet(isPresented: $showCamera) {
-                CameraPicker(image: $cameraImage).ignoresSafeArea()
-            }
             .sheet(isPresented: $showDuplicates) {
                 DuplicateReviewSheet(matches: $duplicateMatches) {
                     dismiss()
@@ -257,12 +254,6 @@ struct AddPurchaseSheet: View {
             .task(id: selectedPhotos) { await handleSelectedPhotos() }
             // Camera image: append, DO NOT auto‑analyze
             .onChange(of: cameraImage) { _, newImg in
-                guard let img = newImg else { return }
-                selectedImages.append(img)
-                // If the empty row was seeded, and we now have at least one image, we can replace it on first successful analysis.
-                // That removal happens inside analyze flow once we actually get transactions.
-            }
-
                 guard let img = newImg else { return }
                 selectedImages.append(img)
                 // If the empty row was seeded, and we now have at least one image, we can replace it on first successful analysis.
