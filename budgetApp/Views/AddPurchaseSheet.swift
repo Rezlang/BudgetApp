@@ -68,6 +68,8 @@ struct AddPurchaseSheet: View {
     @State private var debugLines: [String] = []
     @AppStorage("chatGPTDebugEnabled") private var chatGPTDebugEnabled = false
 
+    @State private var duplicateMatches: [DuplicateMatch] = []
+    @State private var showDuplicates = false
     // Derived counters for button labeling
     private var remainingToAnalyze: Int {
         max(0, selectedImages.count - nextAnalyzeStartIndex)
@@ -242,10 +244,25 @@ struct AddPurchaseSheet: View {
             .sheet(isPresented: $showCamera) {
                 CameraPicker(image: $cameraImage).ignoresSafeArea()
             }
-            // Loader for chosen Photos: append images, DO NOT auto-analyze
+            .sheet(isPresented: $showCamera) {
+                CameraPicker(image: $cameraImage).ignoresSafeArea()
+            }
+            .sheet(isPresented: $showDuplicates) {
+                DuplicateReviewSheet(matches: $duplicateMatches) {
+                    dismiss()
+                }
+                .environmentObject(store)
+            }
+            // Loader for chosen Photos: append images, DO NOT auto‑analyze
             .task(id: selectedPhotos) { await handleSelectedPhotos() }
-            // Camera image: append, DO NOT auto-analyze
+            // Camera image: append, DO NOT auto‑analyze
             .onChange(of: cameraImage) { _, newImg in
+                guard let img = newImg else { return }
+                selectedImages.append(img)
+                // If the empty row was seeded, and we now have at least one image, we can replace it on first successful analysis.
+                // That removal happens inside analyze flow once we actually get transactions.
+            }
+
                 guard let img = newImg else { return }
                 selectedImages.append(img)
                 // If the empty row was seeded, and we now have at least one image, we can replace it on first successful analysis.
@@ -415,9 +432,9 @@ struct AddPurchaseSheet: View {
     // MARK: - Save
 
     private func saveAll() {
-        var saved = 0
-        for d in drafts where d.isValid {
-            let p = Purchase(
+        let purchases: [Purchase] = drafts.compactMap { d in
+            guard d.isValid else { return nil }
+            return Purchase(
                 date: d.date,
                 merchant: d.merchant.isEmpty ? "Unknown" : d.merchant,
                 amount: d.amount,
@@ -426,15 +443,16 @@ struct AddPurchaseSheet: View {
                 ocrText: nil,
                 tagIDs: Array(d.selectedTagIDs)
             )
-            store.addPurchase(p)
-            if !d.merchant.isEmpty,
-               let catName = store.categories.first(where: { $0.id == d.selectedCategoryID })?.name {
-                store.remember(merchant: d.merchant, categoryName: catName)
-            }
-            saved += 1
         }
-        log("Saved \(saved) purchase(s).")
-        dismiss()
+        let duplicates = store.addPurchasesCheckingDuplicates(purchases)
+        if duplicates.isEmpty {
+            log("Saved \(purchases.count) purchase(s).")
+            dismiss()
+        } else {
+            duplicateMatches = duplicates
+            showDuplicates = true
+            log("Detected \(duplicates.count) potential duplicate(s).")
+        }
     }
 }
 

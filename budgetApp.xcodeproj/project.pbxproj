@@ -30,7 +30,8 @@
 		B1CEDE5D2E483CED003A0BBC /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE5C2E483CED003A0BBC /* SettingsSheet.swift */; };
 		B1CEDE612E483E87003A0BBC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1CEDE602E483E87003A0BBC /* Assets.xcassets */; };
 		B1CEDE632E483F6B003A0BBC /* BudgetAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE622E483F6B003A0BBC /* BudgetAppApp.swift */; };
-		B1CEDE662E4840C4003A0BBC /* TileCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE652E4840C4003A0BBC /* TileCard.swift */; };
+                B1CEDE662E4840C4003A0BBC /* TileCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE652E4840C4003A0BBC /* TileCard.swift */; };
+                B1D0EAD22E500000003A0BBD /* DuplicateReviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D0EAD12E500000003A0BBD /* DuplicateReviewSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -77,7 +78,8 @@
 		B1CEDE5C2E483CED003A0BBC /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SettingsSheet.swift; path = BudgetApp/Views/SettingsSheet.swift; sourceTree = SOURCE_ROOT; };
 		B1CEDE602E483E87003A0BBC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B1CEDE622E483F6B003A0BBC /* BudgetAppApp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BudgetAppApp.swift; sourceTree = "<group>"; };
-		B1CEDE652E4840C4003A0BBC /* TileCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TileCard.swift; path = BudgetApp/Views/Shared/TileCard.swift; sourceTree = SOURCE_ROOT; };
+                B1CEDE652E4840C4003A0BBC /* TileCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TileCard.swift; path = BudgetApp/Views/Shared/TileCard.swift; sourceTree = SOURCE_ROOT; };
+                B1D0EAD12E500000003A0BBD /* DuplicateReviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DuplicateReviewSheet.swift; path = BudgetApp/Views/Shared/DuplicateReviewSheet.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -198,14 +200,15 @@
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
-		B1CEDE642E4840B9003A0BBC /* Shared */ = {
-			isa = PBXGroup;
-			children = (
-				B1CEDE652E4840C4003A0BBC /* TileCard.swift */,
-			);
-			path = Shared;
-			sourceTree = "<group>";
-		};
+                B1CEDE642E4840B9003A0BBC /* Shared */ = {
+                        isa = PBXGroup;
+                        children = (
+                                B1CEDE652E4840C4003A0BBC /* TileCard.swift */,
+                                B1D0EAD12E500000003A0BBD /* DuplicateReviewSheet.swift */,
+                        );
+                        path = Shared;
+                        sourceTree = "<group>";
+                };
 		B1CEDE672E4842E2003A0BBC /* Budget */ = {
 			isa = PBXGroup;
 			children = (
@@ -372,12 +375,13 @@
 				B1CEDE4A2E483BF3003A0BBC /* CameraPicker.swift in Sources */,
 				B1CEDE402E483BC7003A0BBC /* RootView.swift in Sources */,
 				B1CEDE482E483BEF003A0BBC /* AddPurchaseSheet.swift in Sources */,
-				B1CEDE442E483BDF003A0BBC /* PurchaseEditorSheet.swift in Sources */,
-				951EC15A502843B0BC16125A /* TagPickerSheet.swift in Sources */,
-				37AF2F3569E04D5FA53E13A4 /* PurchaseListView.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+                            B1CEDE442E483BDF003A0BBC /* PurchaseEditorSheet.swift in Sources */,
+                            951EC15A502843B0BC16125A /* TagPickerSheet.swift in Sources */,
+                            37AF2F3569E04D5FA53E13A4 /* PurchaseListView.swift in Sources */,
+                            B1D0EAD22E500000003A0BBD /* DuplicateReviewSheet.swift in Sources */,
+                    );
+                    runOnlyForDeploymentPostprocessing = 0;
+                };
 		B1CEDE012E47C71B003A0BBC /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;

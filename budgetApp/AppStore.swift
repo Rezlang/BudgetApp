@@ -4,6 +4,12 @@
 import Foundation
 import SwiftUI
 
+struct DuplicateMatch: Identifiable {
+    let id = UUID()
+    let new: Purchase
+    let existing: Purchase
+}
+
 final class AppStore: ObservableObject {
     @AppStorage("purchases_json") private var purchasesJSON: String = "[]"
     @AppStorage("budget_json") private var budgetJSON: String = ""
@@ -75,6 +81,33 @@ final class AppStore: ObservableObject {
     // Purchases
     func addPurchase(_ p: Purchase) { purchases.insert(p, at: 0); persist() }
     func deletePurchase(_ p: Purchase) { purchases.removeAll { $0.id == p.id }; persist() }
+
+    // Duplicate checking
+    func findDuplicate(of p: Purchase) -> Purchase? {
+        let trimmed = p.merchant.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return purchases.first {
+            $0.merchant.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == trimmed &&
+            $0.amount == p.amount &&
+            Calendar.current.isDate($0.date, inSameDayAs: p.date)
+        }
+    }
+
+    /// Adds purchases, skipping any that appear to be duplicates.
+    /// - Returns: array of detected duplicate matches that were not added.
+    func addPurchasesCheckingDuplicates(_ newPurchases: [Purchase]) -> [DuplicateMatch] {
+        var duplicates: [DuplicateMatch] = []
+        for p in newPurchases {
+            if let existing = findDuplicate(of: p) {
+                duplicates.append(DuplicateMatch(new: p, existing: existing))
+            } else {
+                addPurchase(p)
+                if let catName = category(for: p.categoryID)?.name {
+                    remember(merchant: p.merchant, categoryName: catName)
+                }
+            }
+        }
+        return duplicates
+    }
     
     // Categories
     func addCategory(name: String, limit: Double) {
