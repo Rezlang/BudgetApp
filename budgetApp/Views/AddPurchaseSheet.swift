@@ -1,5 +1,7 @@
 // FILE: BudgetApp/Views/AddPurchaseSheet.swift
 // Add multiple purchases at once with tags. Fix: replace seeded empty manual row with first camera/photo import.
+// Enhancement: Adds an explicit "Analyze" button that shows progress (which photo is being analyzed),
+// and processes images sequentially (no new image is sent until the previous response is received).
 
 import SwiftUI
 import PhotosUI
@@ -13,6 +15,7 @@ private struct DraftPurchase: Identifiable, Equatable {
     var notes: String
     var date: Date
     var selectedTagIDs: Set<UUID>
+    var isCredit: Bool
 
     init(
         id: UUID = UUID(),
@@ -21,7 +24,8 @@ private struct DraftPurchase: Identifiable, Equatable {
         selectedCategoryID: UUID? = nil,
         notes: String = "",
         date: Date = Date(),
-        selectedTagIDs: Set<UUID> = []
+        selectedTagIDs: Set<UUID> = [],
+        isCredit: Bool = false
     ) {
         self.id = id
         self.merchant = merchant
@@ -30,24 +34,31 @@ private struct DraftPurchase: Identifiable, Equatable {
         self.notes = notes
         self.date = date
         self.selectedTagIDs = selectedTagIDs
+        self.isCredit = isCredit
     }
 
     var amount: Double {
-        Double(amountString.filter { "0123456789.-".contains($0) }) ?? 0
+        let base = Double(amountString.filter { "0123456789.".contains($0) }) ?? 0
+        return isCredit ? -base : base
     }
 
-    var isValid: Bool {
-        amount > 0
-    }
+    var isValid: Bool { amount != 0 }
 }
 
 struct AddPurchaseSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var store: AppStore
 
-    @State private var selectedPhoto: PhotosPickerItem?
-    @State private var selectedImage: UIImage?
-    @State private var isAnalyzing = false
+    @State private var selectedPhotos: [PhotosPickerItem] = []
+    @State private var selectedImages: [UIImage] = []         // All chosen images (camera + picker)
+    @State private var cameraImage: UIImage?
+
+    // Analysis state
+    @State private var isAnalyzing = false                    // Single-image analysis flag (used inside analyzeImageToDrafts)
+    @State private var isAnalyzingQueue = false               // Queue processing flag (drives the Analyze button/UX)
+    @State private var currentAnalyzeIndex: Int? = nil        // Which index in selectedImages is being analyzed right now
+    @State private var nextAnalyzeStartIndex: Int = 0         // Images [nextAnalyzeStartIndex...] are pending analysis
+
     @State private var showCamera = false
 
     @State private var drafts: [DraftPurchase] = []
@@ -59,11 +70,17 @@ struct AddPurchaseSheet: View {
 
     @State private var duplicateMatches: [DuplicateMatch] = []
     @State private var showDuplicates = false
+    // Derived counters for button labeling
+    private var remainingToAnalyze: Int {
+        max(0, selectedImages.count - nextAnalyzeStartIndex)
+    }
+    private var totalImagesCount: Int { selectedImages.count }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    // Photo controls
                     HStack(spacing: 10) {
                         Button {
                             showCamera = true
@@ -81,12 +98,11 @@ struct AddPurchaseSheet: View {
                         }
                         .buttonStyle(.plain)
 
-                        PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                        PhotosPicker(selection: $selectedPhotos, matching: .images) {
                             HStack {
                                 Image(systemName: "photo.on.rectangle")
-                                Text(isAnalyzing ? "Analyzing…" : "Choose Image")
+                                Text("Choose Images")
                                 Spacer()
-                                if isAnalyzing { ProgressView() }
                             }
                             .padding()
                             .frame(maxWidth: .infinity)
@@ -96,14 +112,71 @@ struct AddPurchaseSheet: View {
                         .buttonStyle(.plain)
                     }
 
-                    if let img = selectedImage {
-                        Image(uiImage: img)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxHeight: 200)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    // Analyze button with progress + which photo
+                    Button {
+                        Task { await analyzePendingImagesSequentially() }
+                    } label: {
+                        HStack(spacing: 8) {
+                            if isAnalyzingQueue {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "wand.and.stars")
+                            }
+                            if isAnalyzingQueue, let idx = currentAnalyzeIndex {
+                                // Human-friendly position (1-based)
+                                Text("Analyzing \(idx + 1) of \(totalImagesCount)")
+                                    .fontWeight(.semibold)
+                            } else if remainingToAnalyze > 0 {
+                                Text("Analyze \(remainingToAnalyze) Photo\(remainingToAnalyze == 1 ? "" : "s")")
+                                    .fontWeight(.semibold)
+                            } else {
+                                Text("Analyze")
+                                    .fontWeight(.semibold)
+                            }
+                            Spacer()
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(remainingToAnalyze > 0 && !isAnalyzingQueue ? Color.accentColor.opacity(0.15) : Color.cardBackground, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.subtleOutline))
+                    }
+                    .disabled(remainingToAnalyze == 0 || isAnalyzingQueue)
+                    .accessibilityIdentifier("AnalyzePhotosButton")
+
+                    // Selected images scroller (highlights current analyzing image)
+                    if !selectedImages.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(Array(selectedImages.enumerated()), id: \.offset) { index, img in
+                                    ZStack(alignment: .topLeading) {
+                                        Image(uiImage: img)
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(maxHeight: 200)
+                                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                    .strokeBorder(borderColor(for: index), lineWidth: borderWidth(for: index))
+                                            )
+
+                                        // Badge labels
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            if let cur = currentAnalyzeIndex, cur == index, isAnalyzingQueue {
+                                                badge(text: "Analyzing \(index + 1)/\(totalImagesCount)")
+                                            } else if index < nextAnalyzeStartIndex {
+                                                badge(text: "Done")
+                                            } else {
+                                                badge(text: "Pending")
+                                            }
+                                        }
+                                        .padding(8)
+                                    }
+                                }
+                            }
+                        }
                     }
 
+                    // Manual entries header + add button
                     HStack {
                         Text("Manual Entries").font(.headline)
                         Spacer()
@@ -117,6 +190,7 @@ struct AddPurchaseSheet: View {
                         .accessibilityIdentifier("AddManualLineButton")
                     }
 
+                    // Draft rows
                     VStack(spacing: 12) {
                         if drafts.isEmpty {
                             Text("No draft purchases yet. Add some manually or import from a receipt/statement image.")
@@ -163,14 +237,15 @@ struct AddPurchaseSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save All") {
-                        saveAll()
-                    }
-                    .disabled(!drafts.contains(where: { $0.isValid }))
+                    Button("Save All") { saveAll() }
+                        .disabled(!drafts.contains(where: { $0.isValid }))
                 }
             }
             .sheet(isPresented: $showCamera) {
-                CameraPicker(image: $selectedImage).ignoresSafeArea()
+                CameraPicker(image: $cameraImage).ignoresSafeArea()
+            }
+            .sheet(isPresented: $showCamera) {
+                CameraPicker(image: $cameraImage).ignoresSafeArea()
             }
             .sheet(isPresented: $showDuplicates) {
                 DuplicateReviewSheet(matches: $duplicateMatches) {
@@ -178,10 +253,20 @@ struct AddPurchaseSheet: View {
                 }
                 .environmentObject(store)
             }
-            .task(id: selectedPhoto) { await handleSelectedPhoto() }
-            .onChange(of: selectedImage) { _, newImg in
+            // Loader for chosen Photos: append images, DO NOT auto‑analyze
+            .task(id: selectedPhotos) { await handleSelectedPhotos() }
+            // Camera image: append, DO NOT auto‑analyze
+            .onChange(of: cameraImage) { _, newImg in
                 guard let img = newImg else { return }
-                Task { await analyzeImageToDrafts(img) }
+                selectedImages.append(img)
+                // If the empty row was seeded, and we now have at least one image, we can replace it on first successful analysis.
+                // That removal happens inside analyze flow once we actually get transactions.
+            }
+
+                guard let img = newImg else { return }
+                selectedImages.append(img)
+                // If the empty row was seeded, and we now have at least one image, we can replace it on first successful analysis.
+                // That removal happens inside analyze flow once we actually get transactions.
             }
             .onAppear {
                 if drafts.isEmpty {
@@ -193,12 +278,40 @@ struct AddPurchaseSheet: View {
         }
     }
 
+    // MARK: - UI Helpers
+
+    private func badge(text: String) -> some View {
+        Text(text)
+            .font(.caption2)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.cardBackground)
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(.subtleOutline))
+    }
+
+    private func borderColor(for index: Int) -> Color {
+        if let cur = currentAnalyzeIndex, cur == index, isAnalyzingQueue { return .accentColor }
+        if index < nextAnalyzeStartIndex { return .green }
+        return .subtleOutline
+    }
+
+    private func borderWidth(for index: Int) -> CGFloat {
+        if let cur = currentAnalyzeIndex, cur == index, isAnalyzingQueue { return 3 }
+        if index < nextAnalyzeStartIndex { return 2 }
+        return 1
+    }
+
+    // MARK: - Logging
+
     private func log(_ s: String) {
         guard chatGPTDebugEnabled else { return }
         let f = DateFormatter(); f.dateFormat = "HH:mm:ss.SSS"
         debugLines.append("\(f.string(from: Date())) \(s)")
         if debugLines.count > 400 { debugLines.removeFirst(debugLines.count - 400) }
     }
+
+    // MARK: - Date Parsing
 
     private func parseDateISO(_ s: String?) -> Date? {
         guard let s = s, !s.isEmpty else { return nil }
@@ -207,25 +320,57 @@ struct AddPurchaseSheet: View {
         return iso.date(from: s)
     }
 
-    private func handleSelectedPhoto() async {
-        guard let item = selectedPhoto else { return }
-        if isAnalyzing { log("Skip: analyze already running"); return }
-        isAnalyzing = true
-        defer { isAnalyzing = false }
-        do {
-            log("Selected photo. Loading data…")
-            if let data = try await item.loadTransferable(type: Data.self),
-               let img = UIImage(data: data) {
-                selectedImage = img
-                log(String(format: "Image ready. bytes=%d, dims=%dx%d", data.count, Int(img.size.width), Int(img.size.height)))
-                await analyzeImageToDrafts(img)
-            } else {
-                log("ERROR: unable to decode image from picked data.")
+    // MARK: - Image Selection (no auto-analyze)
+
+    private func handleSelectedPhotos() async {
+        let items = selectedPhotos
+        selectedPhotos = []
+        for item in items {
+            do {
+                log("Selected photo. Loading data…")
+                if let data = try await item.loadTransferable(type: Data.self),
+                   let img = UIImage(data: data) {
+                    selectedImages.append(img)
+                    log(String(format: "Image ready. bytes=%d, dims=%dx%d", data.count, Int(img.size.width), Int(img.size.height)))
+                    // NOTE: do NOT call analyze here; user will press Analyze button.
+                } else {
+                    log("ERROR: unable to decode image from picked data.")
+                }
+            } catch {
+                log("ERROR: handleSelectedPhoto failed: \(error.localizedDescription)")
             }
-        } catch {
-            log("ERROR: handleSelectedPhoto failed: \(error.localizedDescription)")
         }
     }
+
+    // MARK: - Sequential Analysis Queue
+
+    private func analyzePendingImagesSequentially() async {
+        guard !isAnalyzingQueue else { return }
+        guard remainingToAnalyze > 0 else { return }
+
+        isAnalyzingQueue = true
+        defer { isAnalyzingQueue = false; currentAnalyzeIndex = nil }
+
+        // Process images strictly in order: delay sending the next photo until the previous response is received.
+        let start = nextAnalyzeStartIndex
+        let end = selectedImages.count
+
+        for idx in start..<end {
+            // If the view disappears or user cancels, you could add a cancellation check here (optional).
+            currentAnalyzeIndex = idx
+            log(String(format: "BEGIN analyze photo %d/%d", idx + 1, totalImagesCount))
+
+            // Await the analysis of this image before moving to the next.
+            await analyzeImageToDrafts(selectedImages[idx])
+
+            // Mark this image as completed so the next press continues from here.
+            nextAnalyzeStartIndex = idx + 1
+
+            log(String(format: "END analyze photo %d/%d", idx + 1, totalImagesCount))
+        }
+    }
+
+    // MARK: - Single Image → Drafts
 
     private func analyzeImageToDrafts(_ image: UIImage) async {
         if isAnalyzing == false { isAnalyzing = true }
@@ -243,6 +388,7 @@ struct AddPurchaseSheet: View {
 
             if txns.isEmpty { log("No transactions parsed."); return }
 
+            // Replace seeded empty manual row with first successful import
             if seededEmptyRow,
                drafts.count == 1,
                drafts[0].merchant.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -250,10 +396,10 @@ struct AddPurchaseSheet: View {
                 drafts.removeAll()
                 seededEmptyRow = false
             }
-            
+
             var added = 0
             for t in txns {
-                guard t.amount > 0 else { continue }
+                guard t.amount != 0 else { continue }
                 let catID: UUID? = {
                     if let c = t.category, let id = store.categoryID(named: c) { return id }
                     return store.categoryID(named: "Other") ?? store.categories.first?.id
@@ -265,19 +411,25 @@ struct AddPurchaseSheet: View {
 
                 drafts.append(DraftPurchase(
                     merchant: t.merchant,
-                    amountString: String(format: "%.2f", t.amount),
+                    amountString: String(format: "%.2f", abs(t.amount)),
                     selectedCategoryID: catID,
                     notes: "",
                     date: date,
-                    selectedTagIDs: Set(tagIDs)
+                    selectedTagIDs: Set(tagIDs),
+                    isCredit: t.amount < 0
                 ))
                 added += 1
             }
             log("Created \(added) draft line(s) from image.")
+        } catch is CancellationError {
+            // Swallow expected cancellations (e.g., if caller cancels) without treating as an error.
+            log("analyzeImageToDrafts cancelled.")
         } catch {
             log("ERROR: analyzeTransactions() failed: \(error.localizedDescription)")
         }
     }
+
+    // MARK: - Save
 
     private func saveAll() {
         let purchases: [Purchase] = drafts.compactMap { d in
@@ -303,9 +455,6 @@ struct AddPurchaseSheet: View {
         }
     }
 }
-
-// DraftRow unchanged
-
 
 // MARK: - Draft Row UI
 
@@ -333,10 +482,17 @@ private struct DraftRow: View {
             HStack(spacing: 12) {
                 TextField("Amount (e.g. 23.45)", text: Binding(
                     get: { draft.amountString },
-                    set: { draft.amountString = $0.filter { "0123456789.-".contains($0) } }
+                    set: { draft.amountString = $0.filter { "0123456789.".contains($0) } }
                 ))
                 .keyboardType(.decimalPad)
                 .textFieldStyle(.roundedBorder)
+
+                Button {
+                    draft.isCredit.toggle()
+                } label: {
+                    Image(systemName: draft.isCredit ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
+                        .foregroundColor(draft.isCredit ? .green : .red)
+                }
 
                 Picker("Category", selection: Binding(
                     get: { draft.selectedCategoryID ?? categories.first?.id },
@@ -395,4 +551,3 @@ private struct DraftRow: View {
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.subtleOutline))
     }
 }
-

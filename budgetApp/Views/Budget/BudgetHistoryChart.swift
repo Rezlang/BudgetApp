@@ -48,6 +48,7 @@ struct BudgetHistoryChart: View {
     var purchases: [Purchase]
     @State private var range: TimeRange = .currentMonth
     @State private var mode: ChartMode = .spent
+    @State private var selectedPoint: BudgetHistoryPoint?
 
     private var filtered: [Purchase] {
         let start = range.startDate
@@ -71,14 +72,29 @@ struct BudgetHistoryChart: View {
         return out
     }
 
+    private var displayAmount: Double {
+        let base: Double
+        if let sel = selectedPoint {
+            base = sel.amount
+        } else {
+            base = points.last?.amount ?? 0
+        }
+        return mode == .spent ? base : max(category.limit - base, 0)
+    }
+
     var body: some View {
         VStack(alignment: .leading) {
+            Text("\(mode == .spent ? "Total Spent" : "Remaining"): \(displayAmount, format: .currency(code: Locale.current.currency?.identifier ?? "USD"))")
+                .font(.headline)
+
             Picker("Range", selection: $range) {
                 ForEach(TimeRange.allCases) { r in
                     Text(r.title).tag(r)
                 }
             }
             .pickerStyle(.segmented)
+
+            .onChange(of: range) { _, _ in selectedPoint = nil }
 
             Picker("Mode", selection: $mode) {
                 ForEach(ChartMode.allCases) { m in
@@ -87,16 +103,54 @@ struct BudgetHistoryChart: View {
             }
             .pickerStyle(.segmented)
 
+            .onChange(of: mode) { _, _ in selectedPoint = nil }
+
+            let yLabel = mode == .spent ? "Spent" : "Remaining"
             Chart {
                 ForEach(points) { pt in
                     LineMark(
                         x: .value("Date", pt.date),
-                        y: .value(mode == .spent ? "Spent" : "Remaining",
-                                  mode == .spent ? pt.amount : max(category.limit - pt.amount, 0))
+                        y: .value(yLabel, mode == .spent ? pt.amount : max(category.limit - pt.amount, 0))
                     )
+                    PointMark(
+                        x: .value("Date", pt.date),
+                        y: .value(yLabel, mode == .spent ? pt.amount : max(category.limit - pt.amount, 0))
+                    )
+                    .symbolSize(selectedPoint?.id == pt.id ? 150 : 50)
+                }
+                if let sel = selectedPoint {
+                    RuleMark(
+                        x: .value("Date", sel.date),
+                        yStart: .value(yLabel, 0),
+                        yEnd: .value(yLabel, mode == .spent ? sel.amount : max(category.limit - sel.amount, 0))
+                    )
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [5]))
+                    .foregroundStyle(.gray)
                 }
             }
             .frame(height: 200)
+            .chartOverlay { proxy in
+                GeometryReader { geo in
+                    Rectangle().fill(.clear).contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onEnded { value in
+                                    let origin = geo[proxy.plotAreaFrame].origin
+                                    let x = value.location.x - origin.x
+                                    if let date: Date = proxy.value(atX: x) {
+                                        let day = Calendar.current.startOfDay(for: date)
+                                        if let match = points.first(where: { Calendar.current.isDate($0.date, inSameDayAs: day) }) {
+                                            if selectedPoint?.id == match.id {
+                                                selectedPoint = nil
+                                            } else {
+                                                selectedPoint = match
+                                            }
+                                        }
+                                    }
+                                }
+                        )
+                }
+            }
         }
         .padding(.vertical)
     }

@@ -10,6 +10,7 @@
 		37AF2F3569E04D5FA53E13A4 /* PurchaseListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F3A64B4D144A4C8C2FCE52 /* PurchaseListView.swift */; };
 		951EC15A502843B0BC16125A /* TagPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25588815A3374A8AA138CBFB /* TagPickerSheet.swift */; };
 		B15974442E490FD500E7D322 /* DebugConsole.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15974432E490FD500E7D322 /* DebugConsole.swift */; };
+		B1BD24FC2E4E7F2300A141FC /* BudgetHistoryChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BD24FB2E4E7F2300A141FC /* BudgetHistoryChart.swift */; };
 		B1CEDE0A2E47C71B003A0BBC /* budgetAppTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE092E47C71B003A0BBC /* budgetAppTests.swift */; };
 		B1CEDE142E47C71B003A0BBC /* budgetAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE132E47C71B003A0BBC /* budgetAppUITests.swift */; };
 		B1CEDE162E47C71B003A0BBC /* budgetAppUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1CEDE152E47C71B003A0BBC /* budgetAppUITestsLaunchTests.swift */; };
@@ -54,6 +55,7 @@
 		25588815A3374A8AA138CBFB /* TagPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TagPickerSheet.swift; path = budgetApp/Views/TagPickerSheet.swift; sourceTree = SOURCE_ROOT; };
 		78F3A64B4D144A4C8C2FCE52 /* PurchaseListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PurchaseListView.swift; path = budgetApp/Views/Budget/PurchaseListView.swift; sourceTree = SOURCE_ROOT; };
 		B15974432E490FD500E7D322 /* DebugConsole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DebugConsole.swift; path = BudgetApp/Debug/DebugConsole.swift; sourceTree = SOURCE_ROOT; };
+		B1BD24FB2E4E7F2300A141FC /* BudgetHistoryChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetHistoryChart.swift; sourceTree = "<group>"; };
 		B1CEDDF52E47C71A003A0BBC /* budgetApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = budgetApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1CEDE052E47C71B003A0BBC /* budgetAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = budgetAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1CEDE092E47C71B003A0BBC /* budgetAppTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = budgetAppTests.swift; sourceTree = "<group>"; };
@@ -213,6 +215,7 @@
 				B1CEDE412E483BD7003A0BBC /* BudgetView.swift */,
 				B1CEDE452E483BE7003A0BBC /* BudgetSubviews.swift */,
 				78F3A64B4D144A4C8C2FCE52 /* PurchaseListView.swift */,
+				B1BD24FB2E4E7F2300A141FC /* BudgetHistoryChart.swift */,
 			);
 			path = Budget;
 			sourceTree = "<group>";
@@ -357,6 +360,7 @@
 			files = (
 				B15974442E490FD500E7D322 /* DebugConsole.swift in Sources */,
 				B1CEDE4E2E483C00003A0BBC /* CardEditorSheet.swift in Sources */,
+				B1BD24FC2E4E7F2300A141FC /* BudgetHistoryChart.swift in Sources */,
 				B1CEDE662E4840C4003A0BBC /* TileCard.swift in Sources */,
 				B1CEDE572E483C8B003A0BBC /* Models.swift in Sources */,
 				B1CEDE422E483BD7003A0BBC /* BudgetView.swift in Sources */,

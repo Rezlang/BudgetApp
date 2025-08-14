@@ -17,6 +17,7 @@ struct PurchaseEditorSheet: View {
     // Editable state
     @State private var merchant: String = ""
     @State private var amountString: String = ""
+    @State private var isCredit: Bool = false
     @State private var selectedCategoryID: UUID?
     @State private var date: Date = Date()
     @State private var notes: String = ""
@@ -33,8 +34,20 @@ struct PurchaseEditorSheet: View {
                 Section(header: Text("Details")) {
                     TextField("Merchant", text: $merchant)
                         .textInputAutocapitalization(.words)
-                    TextField("Amount", text: $amountString)
+                    HStack {
+                        TextField("Amount", text: Binding(
+                            get: { amountString },
+                            set: { amountString = $0.filter { "0123456789.".contains($0) } }
+                        ))
                         .keyboardType(.decimalPad)
+
+                        Button {
+                            isCredit.toggle()
+                        } label: {
+                            Image(systemName: isCredit ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
+                                .foregroundColor(isCredit ? .green : .red)
+                        }
+                    }
                     
                     Picker("Category", selection: Binding(
                         get: { selectedCategoryID ?? store.categoryID(named: "Other") ?? store.categories.first?.id },
@@ -125,7 +138,7 @@ struct PurchaseEditorSheet: View {
                             id: purchase?.id ?? UUID(),
                             date: date,
                             merchant: merchant.isEmpty ? "Unknown" : merchant,
-                            amount: parsedAmount ?? 0,
+                            amount: (isCredit ? -(parsedAmount ?? 0) : (parsedAmount ?? 0)),
                             categoryID: selectedCategoryID,
                             notes: notes.isEmpty ? nil : notes,
                             ocrText: purchase?.ocrText,
@@ -139,7 +152,7 @@ struct PurchaseEditorSheet: View {
                         }
                         dismiss()
                     }
-                    .disabled((parsedAmount ?? 0) <= 0)
+                    .disabled((parsedAmount ?? 0) == 0)
                 }
             }
             .scrollContentBackground(.automatic)
@@ -150,7 +163,8 @@ struct PurchaseEditorSheet: View {
             .onAppear {
                 if let p = purchase {
                     merchant = p.merchant
-                    amountString = String(format: "%.2f", p.amount)
+                    amountString = String(format: "%.2f", abs(p.amount))
+                    isCredit = p.amount < 0
                     selectedCategoryID = p.categoryID ?? store.categoryID(named: "Other") ?? store.categories.first?.id
                     date = p.date
                     notes = p.notes ?? ""
