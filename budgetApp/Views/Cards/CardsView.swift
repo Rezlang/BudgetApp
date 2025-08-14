@@ -195,7 +195,7 @@ struct CardsView: View {
 
                 var imported = 0
                 for t in txns {
-                    guard t.amount > 0 else { continue }
+                    guard t.amount != 0 else { continue }
                     let catID: UUID? = {
                         if let c = t.category, let id = store.categoryID(named: c) { return id }
                         return store.categoryID(named: "Other") ?? store.categories.first?.id
