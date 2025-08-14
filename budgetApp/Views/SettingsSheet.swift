@@ -9,6 +9,7 @@ struct SettingsSheet: View {
     @EnvironmentObject var store: AppStore
 
     @State private var showEraseConfirm = false
+    @AppStorage("chatgpt_api_key") private var chatGPTKey: String = ""
 
     private let swatches: [Color] = [
         Color(hex: "#7F3DFF") ?? .purple,
@@ -65,6 +66,12 @@ struct SettingsSheet: View {
                     Text("Accent color applies to generic controls and icons that don't have their own category color.")
                         .font(.footnote)
                         .foregroundColor(.secondary)
+                }
+
+                Section(header: Text("ChatGPT")) {
+                    TextField("ChatGPT API Key", text: $chatGPTKey)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                 }
 
                 Section(header: Text("Data")) {
