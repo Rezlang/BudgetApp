@@ -224,7 +224,6 @@ struct CardsView: View {
         }
     }
     
-    
     // (rest of file unchanged below …)
     
     // MARK: - Tiles & helpers

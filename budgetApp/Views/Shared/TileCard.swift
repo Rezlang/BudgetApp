@@ -1,6 +1,6 @@
 // ===== FILE: BudgetApp/Views/Shared/TileCard.swift =====
-// Reusable tile container. In move mode: solid background and a pulsing border
-// that crossfades between solid and dashed. No jiggle.
+// Make the pulsing dashed/solid border the DEFAULT behavior whenever `editing == true`.
+// This way BOTH Budget tiles and Credit Card tiles get it automatically, with code defined once.
 
 import SwiftUI
 
@@ -13,8 +13,8 @@ struct TileCard<Content: View>: View {
     var background: Color = .cardBackground
     /// Base stroke color.
     var overlayStroke: Color = .subtleOutline
-    /// When true, the border will pulse between dashed and solid while `editing` is true.
-    var dashedWhenEditing: Bool = false
+    /// DEFAULT: pulse between dashed and solid while `editing` is true.
+    var dashedWhenEditing: Bool = true     // <-- changed default to true
     var content: () -> Content
 
     @State private var dashedVisible: Bool = false
@@ -42,7 +42,6 @@ struct TileCard<Content: View>: View {
                             style: StrokeStyle(lineWidth: 1.5, dash: [6, 3]))
                     .opacity(dashedOpacity)
             }
-            // Smooth, slightly slower pulse
             .animation(.easeInOut(duration: 0.9), value: dashedVisible)
 
             // Content
@@ -58,14 +57,12 @@ struct TileCard<Content: View>: View {
     private func handlePulseChange(active: Bool) {
         if active {
             dashedVisible = false
-            // Start continuous pulse (solid <-> dashed)
             DispatchQueue.main.async {
                 withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
                     dashedVisible = true
                 }
             }
         } else {
-            // Stop pulsing, show solid
             dashedVisible = false
         }
     }
