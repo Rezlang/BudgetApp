@@ -41,6 +41,12 @@ struct PurchaseListView: View {
 
     var body: some View {
         List {
+            if case .category(let cat) = filter {
+                Section {
+                    BudgetHistoryChart(category: cat, purchases: purchases)
+                }
+            }
+
             ForEach(purchases) { p in
                 VStack(alignment: .leading, spacing: 4) {
                     let cat = store.categories.first(where: { $0.id == p.categoryID })
