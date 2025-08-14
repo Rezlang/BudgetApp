@@ -15,17 +15,26 @@ struct TileCard<Content: View>: View {
     var overlayStroke: Color = .subtleOutline
     /// When true, the border will pulse between dashed and solid while `editing` is true.
     var dashedWhenEditing: Bool = false
+    /// When true, the background will pulse between a light gray and white while editing.
+    var pulseBackgroundWhenEditing: Bool = false
     var content: () -> Content
 
     @State private var dashedVisible: Bool = false
+    @State private var bgPulse: Bool = false
 
     private var showPulse: Bool { editing && dashedWhenEditing }
+    private var showBgPulse: Bool { editing && pulseBackgroundWhenEditing }
 
     var body: some View {
         ZStack {
             // Background
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(background)
+
+            if showBgPulse {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Color.gray.opacity(bgPulse ? 0.0 : 0.2))
+            }
 
             // Border: crossfade between solid and dashed
             ZStack {
@@ -49,8 +58,12 @@ struct TileCard<Content: View>: View {
             content()
                 .padding(14)
         }
-        .onAppear { handlePulseChange(active: showPulse) }
+        .onAppear {
+            handlePulseChange(active: showPulse)
+            handleBgPulseChange(active: showBgPulse)
+        }
         .onChange(of: showPulse) { active in handlePulseChange(active: active) }
+        .onChange(of: showBgPulse) { active in handleBgPulseChange(active: active) }
         .frame(width: size.width, height: size.height)
         .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
@@ -67,6 +80,19 @@ struct TileCard<Content: View>: View {
         } else {
             // Stop pulsing, show solid
             dashedVisible = false
+        }
+    }
+
+    private func handleBgPulseChange(active: Bool) {
+        if active {
+            bgPulse = false
+            DispatchQueue.main.async {
+                withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                    bgPulse = true
+                }
+            }
+        } else {
+            bgPulse = false
         }
     }
 }

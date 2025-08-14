@@ -30,9 +30,10 @@ struct BudgetProgressCard: View {
             cornerRadius: cornerRadius,
             editing: editing,
             wiggle: false,                // no jiggle
-            background: .cardBackground,  // solid, no flashing
+            background: .cardBackground,  // solid, base color
             overlayStroke: strokeColor,
-            dashedWhenEditing: true       // pulse between dashed and solid while moving
+            dashedWhenEditing: true,      // pulse between dashed and solid while moving
+            pulseBackgroundWhenEditing: true
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
@@ -136,16 +137,8 @@ struct CategoryEditorSheet: View {
                         }
                         .accessibilityHidden(true)
 
-                        VStack(alignment: .leading) {
-                            TextField("SF Symbol (e.g. tag.fill, cart.fill)", text: $iconSystemName)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled(true)
-                                .font(.subheadline)
-                            Text("Use any valid SF Symbol name.").font(.caption).foregroundColor(.secondary)
-                        }
+                        ColorPicker("Icon Color", selection: $colorSelection, supportsOpacity: false)
                     }
-
-                    ColorPicker("Icon Color", selection: $colorSelection, supportsOpacity: false)
 
                     Menu("Quick Symbols") {
                         ForEach(["tag.fill", "cart.fill", "fork.knife", "airplane", "car.fill", "tram.fill", "popcorn.fill", "bag.fill", "house.fill", "stethoscope", "bolt.fill"], id: \.self) { s in
