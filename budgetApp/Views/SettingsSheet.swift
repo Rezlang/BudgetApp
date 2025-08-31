@@ -75,6 +75,14 @@ struct SettingsSheet: View {
                         .autocorrectionDisabled()
                 }
 
+                Section(header: Text("Banking")) {
+                    Button {
+                        PlaidService.shared.linkAccount()
+                    } label: {
+                        Label("Link Account with Plaid", systemImage: "link")
+                    }
+                }
+
                 Section(header: Text("Data")) {
                     Button(role: .destructive) {
                         showEraseConfirm = true
